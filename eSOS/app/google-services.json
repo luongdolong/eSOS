@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "740361767426",
+    "firebase_url": "https://esos-92492.firebaseio.com",
+    "project_id": "esos-92492",
+    "storage_bucket": "esos-92492.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740361767426:android:c03b2afeae0e3bfd",
+        "android_client_info": {
+          "package_name": "com.xyz.automate.esos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "740361767426-glmurh4nhdkmm68h8dmc64mvbuggbnl1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAEFYBB-PerIOw_zen_CfXMpD99_ANgb60"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
