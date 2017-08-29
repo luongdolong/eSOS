@@ -1,6 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    tools:context="com.xyz.automate.esos.activity.SplashScreenActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:orientation="vertical"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#fff"
+            android:text="Số điện thoại"
+            />
+        <EditText
+            android:id="@+id/editPhoneNumber"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="0dp"
+            android:layout_gravity="center"
+            android:textColor="#fff"
+            android:maxLines="1"
+            android:maxLength="16"
+            android:digits="0123456789"
+            android:imeOptions="actionNext"
+            android:inputType="phone"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dp"
+            android:textColor="#fff"
+            android:text="Tên người dùng"
+            />
+        <EditText
+            android:id="@+id/editNickname"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="0dp"
+            android:layout_gravity="center"
+            android:textColor="#fff"
+            android:imeOptions="actionDone"
+            android:maxLength="25"
+            android:maxLines="1"
+            android:inputType="text"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dp"
+            android:textColor="#fff"
+            android:text="Đối tượng̣"
+            />
+        <Spinner
+            android:id="@+id/objectTypeSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="3">
+            <com.google.android.gms.common.SignInButton
+                android:id="@+id/google_button"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                />
+            <com.facebook.login.widget.LoginButton
+                android:id="@+id/loginFBbutton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:textAllCaps="false"
+                android:text="Đăng nhập\nSố điện thoại"/>
+        </LinearLayout>
 
-</LinearLayout>
+
+    </LinearLayout>
+</RelativeLayout>

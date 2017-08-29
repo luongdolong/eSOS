@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">ESoS</string>
+    <string name="facebook_app_id">166469800577225</string>
+    <string name="coordination_center">Trung tâm điều phối cấp cứu BV 198</string>
+    <string name="health_establishment">Cơ sở y tế</string>
+    <string name="emergency_group">Tổ cấp cứu lưu động</string>
+    <string name="traffic_police">Cảnh sát Giao thông</string>
+    <string name="end_user">Người dùng thông thường</string>
 </resources>

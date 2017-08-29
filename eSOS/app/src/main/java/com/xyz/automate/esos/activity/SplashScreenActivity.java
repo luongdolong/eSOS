@@ -1,7 +1,10 @@
 package com.xyz.automate.esos.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.nfc.Tag;
+import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,9 +12,11 @@ import android.util.Log;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.xyz.automate.esos.R;
+import com.xyz.automate.esos.custom.ProgressInfDialog;
 
 public class SplashScreenActivity extends AppCompatActivity {
 
+    private ProgressInfDialog mProgressBar;
     // [START declare_auth]
     private FirebaseAuth mAuth;
     // [END declare_auth]
@@ -20,23 +25,43 @@ public class SplashScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
-        FirebaseUser user = null;
+        mProgressBar = new ProgressInfDialog(this);
+        mProgressBar.show();
+        new AuthenticateFirebaseTask(this).execute();
+    }
 
-        try {
-            // [START initialize_auth]
-            mAuth = FirebaseAuth.getInstance();
-            user = mAuth.getCurrentUser();
-        } catch (Exception ex) {
-            Log.d("ESOS", ex.getMessage());
+    private class AuthenticateFirebaseTask extends AsyncTask<Void, Void, Void> {
+        private Context mContext;
+
+        public AuthenticateFirebaseTask(Context context) {
+            mContext = context;
         }
-        // [END initialize_auth]
-        if (user == null) {
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        } else {
-            Intent intent = new Intent(this, HomeActivity.class);
-            startActivity(intent);
+
+        protected Void doInBackground(Void...params) {
+            FirebaseUser user = null;
+
+            try {
+                // [START initialize_auth]
+                mAuth = FirebaseAuth.getInstance();
+                user = mAuth.getCurrentUser();
+                // [END initialize_auth]
+            } catch (Exception ex) {
+                Log.d("ESOS", ex.getMessage());
+            }
+            mProgressBar.dismiss();
+            if (user == null) {
+                Intent intent = new Intent(mContext, LoginActivity.class);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(mContext, HomeActivity.class);
+                startActivity(intent);
+            }
+            finish();
+            return null;
         }
-        finish();
+
+        protected void onPostExecute(Long result) {
+
+        }
     }
 }
