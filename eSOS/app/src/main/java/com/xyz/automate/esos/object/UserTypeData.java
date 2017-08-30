@@ -7,19 +7,19 @@ import com.xyz.automate.esos.common.Constants;
  */
 
 public class UserTypeData {
-    private Constants.TypeUser typeUser;
+    private Constants.UserType userType;
     private String text;
 
-    public UserTypeData(Constants.TypeUser typeUser, String text){
+    public UserTypeData(Constants.UserType userType, String text){
         this.text=text;
-        this.typeUser = typeUser;
+        this.userType = userType;
     }
 
     public String getText(){
         return text;
     }
 
-    public Constants.TypeUser getTypeUser(){
-        return typeUser;
+    public Constants.UserType getTypeUser(){
+        return userType;
     }
 }

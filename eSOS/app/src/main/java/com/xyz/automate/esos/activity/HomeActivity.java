@@ -14,6 +14,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.facebook.login.LoginManager;
 import com.google.firebase.auth.FirebaseAuth;
@@ -27,6 +29,11 @@ import com.xyz.automate.esos.common.Constants;
  */
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private TextView tvUnitname;
+    private TextView tvFullname;
+    private TextView tvPhonenumber;
+    private ImageView avatar;
+    private Constants.UserType userType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +43,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("e-SoS");
         View header = navigationView.getHeaderView(0);
+        tvUnitname = (TextView) header.findViewById(R.id.tvHeaderUnitname);
+        tvFullname = (TextView) header.findViewById(R.id.tvHeaderFullname);
+        tvPhonenumber = (TextView) header.findViewById(R.id.tvHeaderTelNo);
+        avatar = (ImageView) header.findViewById(R.id.imageHeaderAvatar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -45,6 +57,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         drawer.setDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
+        displayUserInfo();
     }
 
     @Override
@@ -95,6 +108,44 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         drawer.closeDrawer(GravityCompat.START);
 
         return false;
+    }
+
+    private void displayUserInfo() {
+        tvFullname.setText(CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_NAME_KEY));
+        tvPhonenumber.setText(CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.PHONE_NUMBER_KEY));
+        int type = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
+        switch (type) {
+            case 0:
+                userType = Constants.UserType.CoordinationCenter;
+                this.tvUnitname.setText(getString(R.string.coordination_center));
+                avatar.setImageResource(R.mipmap.ic_hospital_center);
+                break;
+            case 1:
+                userType = Constants.UserType.HealthEstablishment;
+                this.tvUnitname.setText(getString(R.string.health_establishment));
+                avatar.setImageResource(R.mipmap.ic_medical_bag);
+                break;
+            case 2:
+                userType = Constants.UserType.EmergencyGroup;
+                this.tvUnitname.setText(getString(R.string.emergency_group));
+                avatar.setImageResource(R.mipmap.ic_ambulance);
+                break;
+            case 3:
+                userType = Constants.UserType.TrafficPolice;
+                this.tvUnitname.setText(getString(R.string.traffic_police));
+                avatar.setImageResource(R.mipmap.ic_policeman);
+                break;
+            case 4:
+                userType = Constants.UserType.EndUser;
+                this.tvUnitname.setText(getString(R.string.end_user));
+                avatar.setImageResource(R.mipmap.ic_user_avatar);
+                break;
+            default:
+                userType = Constants.UserType.EndUser;
+                this.tvUnitname.setText("");
+                avatar.setImageResource(R.mipmap.ic_user_avatar);
+                break;
+        }
     }
 
     private void actionLogout() {

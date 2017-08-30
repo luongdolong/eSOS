@@ -5,7 +5,7 @@ package com.xyz.automate.esos.common;
  */
 
 public class Constants {
-    public enum TypeUser { CoordinationCenter, HealthEstablishment, EmergencyGroup, TrafficPolice, EndUser}
+    public enum UserType { CoordinationCenter, HealthEstablishment, EmergencyGroup, TrafficPolice, EndUser}
     public enum SignIn { GOOGLE, FACEBOOK}
 
     public final static String EMPTY = "";
@@ -14,5 +14,5 @@ public class Constants {
     public final static String USER_NAME_KEY = "UserName";
     public final static String USER_TYPE_KEY = "UserType";
     public final static String SIGNIN_METHOD_KEY = "SigninMethod";
-    public final static String USER_NAME_DEFAULT = "Họ và tên";
+    public final static String USER_NAME_DEFAULT = "Têm đơn vị/Người dùng";
 }

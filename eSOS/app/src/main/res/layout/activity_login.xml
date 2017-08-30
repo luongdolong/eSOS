@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="5dp"
             android:textColor="#fff"
-            android:text="Tên người dùng"
+            android:text="Tên đơn vị/Người dùng"
             />
         <EditText
             android:id="@+id/edFullname"
@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="5dp"
             android:textColor="#fff"
-            android:text="Đối tượng̣"
+            android:text="Đơn vị"
             />
         <Spinner
             android:id="@+id/objectTypeSpinner"

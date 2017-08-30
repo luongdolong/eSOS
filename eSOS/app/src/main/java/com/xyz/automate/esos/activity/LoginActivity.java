@@ -160,13 +160,19 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         edPhoneNumber.setText(CommonUtils.getPrefString(this, Constants.PHONE_NUMBER_KEY));
 
         listUserType = new ArrayList<>();
-        listUserType.add(new UserTypeData(Constants.TypeUser.CoordinationCenter, getString(R.string.coordination_center)));
-        listUserType.add(new UserTypeData(Constants.TypeUser.HealthEstablishment, getString(R.string.health_establishment)));
-        listUserType.add(new UserTypeData(Constants.TypeUser.EmergencyGroup, getString(R.string.emergency_group)));
-        listUserType.add(new UserTypeData(Constants.TypeUser.TrafficPolice, getString(R.string.traffic_police)));
-        listUserType.add(new UserTypeData(Constants.TypeUser.EndUser, getString(R.string.end_user)));
+        listUserType.add(new UserTypeData(Constants.UserType.CoordinationCenter, getString(R.string.coordination_center)));
+        listUserType.add(new UserTypeData(Constants.UserType.HealthEstablishment, getString(R.string.health_establishment)));
+        listUserType.add(new UserTypeData(Constants.UserType.EmergencyGroup, getString(R.string.emergency_group)));
+        listUserType.add(new UserTypeData(Constants.UserType.TrafficPolice, getString(R.string.traffic_police)));
+        listUserType.add(new UserTypeData(Constants.UserType.EndUser, getString(R.string.end_user)));
         SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listUserType);
         objectTypeSpinner.setAdapter(adapter);
+        for(int i = 0; i < listUserType.size(); i++) {
+            if (CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY) == listUserType.get(i).getTypeUser().ordinal()) {
+                objectTypeSpinner.setSelection(i);
+                break;
+            }
+        }
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
