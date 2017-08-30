@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_setting"
+            android:icon="@drawable/ic_setting_black"
+            android:title="Thiết lập"/>
+    </group>
+
+    <item android:title="Ứng dụng">
+        <menu>
+            <item
+                android:id="@+id/nav_help"
+                android:icon="@drawable/ic_help_black"
+                android:title="Trợ giúp"/>
+            <item
+                android:id="@+id/nav_about"
+                android:icon="@drawable/ic_info_black"
+                android:title="Về e-SOS"/>
+        </menu>
+    </item>
+
+    <item android:title="Tài khoản">
+        <menu>
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@drawable/ic_exit_to_app_black"
+                android:title="Đăng xuất"/>
+        </menu>
+    </item>
+
+</menu>

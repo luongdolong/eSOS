@@ -16,10 +16,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import android.Manifest;
@@ -31,10 +33,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -43,10 +48,10 @@ import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.adapter.SpinnerTypeUserAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
+import com.xyz.automate.esos.custom.ProgressInfDialog;
 import com.xyz.automate.esos.object.UserTypeData;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by LuongDoLong on 8/28/2017.
@@ -59,13 +64,17 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     private EditText edFullname;
     private Spinner objectTypeSpinner;
     private SignInButton googleSignIn;
-    private LoginButton loginButton;
+    private LoginButton facebookSignIn;
+
+    private ProgressInfDialog mProgressBar;
     private CallbackManager mCallbackManager;
 
     private GoogleApiClient mGoogleApiClient;
     // [START declare_auth]
     private FirebaseAuth mAuth;
     // [END declare_auth]
+
+    private ArrayList<UserTypeData> listUserType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,28 +85,22 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         edPhoneNumber = (EditText)findViewById(R.id.edPhoneNumber);
         edFullname = (EditText)findViewById(R.id.edFullname);
         googleSignIn = (SignInButton)findViewById(R.id.google_button);
+        facebookSignIn = (LoginButton) findViewById(R.id.loginFBbutton);
         mAuth = FirebaseAuth.getInstance();
 
         initControl();
+        Bundle extra = getIntent().getExtras();
+        if (extra != null && mGoogleApiClient != null && mGoogleApiClient.isConnected() &&
+                Constants.FROM_HOME_TO_LOGIN_FLAG.equals(extra.getString(Constants.FROM_HOME_TO_LOGIN_FLAG)) ) {
 
-        // Initialize Facebook Login button
-        mCallbackManager = CallbackManager.Factory.create();
-        loginButton = (LoginButton) findViewById(R.id.loginFBbutton);
-        loginButton.setReadPermissions("email", "public_profile");
-        loginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-            }
-
-            @Override
-            public void onCancel() {
-
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-            }
-        });
+            Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                    new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(@NonNull Status status) {
+                            Log.d("ESOS", status.getStatusMessage());
+                        }
+                    });
+        }
     }
 
     @Override
@@ -139,6 +142,9 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
             } else {
                 showMessage("Đăng nhập thất bại!!!");
             }
+        } else {
+            // Pass the activity result back to the Facebook SDK
+            mCallbackManager.onActivityResult(requestCode, resultCode, data);
         }
     }
 
@@ -148,17 +154,18 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     }
 
     private void initControl() {
+        mProgressBar = new ProgressInfDialog(this);
         loadUserInfo();
         edFullname.setText(CommonUtils.getPrefString(this, Constants.USER_NAME_KEY));
         edPhoneNumber.setText(CommonUtils.getPrefString(this, Constants.PHONE_NUMBER_KEY));
 
-        ArrayList<UserTypeData> list = new ArrayList<>();
-        list.add(new UserTypeData(Constants.TypeUser.CoordinationCenter, getString(R.string.coordination_center)));
-        list.add(new UserTypeData(Constants.TypeUser.HealthEstablishment, getString(R.string.health_establishment)));
-        list.add(new UserTypeData(Constants.TypeUser.EmergencyGroup, getString(R.string.emergency_group)));
-        list.add(new UserTypeData(Constants.TypeUser.TrafficPolice, getString(R.string.traffic_police)));
-        list.add(new UserTypeData(Constants.TypeUser.EndUser, getString(R.string.end_user)));
-        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, list);
+        listUserType = new ArrayList<>();
+        listUserType.add(new UserTypeData(Constants.TypeUser.CoordinationCenter, getString(R.string.coordination_center)));
+        listUserType.add(new UserTypeData(Constants.TypeUser.HealthEstablishment, getString(R.string.health_establishment)));
+        listUserType.add(new UserTypeData(Constants.TypeUser.EmergencyGroup, getString(R.string.emergency_group)));
+        listUserType.add(new UserTypeData(Constants.TypeUser.TrafficPolice, getString(R.string.traffic_police)));
+        listUserType.add(new UserTypeData(Constants.TypeUser.EndUser, getString(R.string.end_user)));
+        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listUserType);
         objectTypeSpinner.setAdapter(adapter);
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -166,7 +173,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 .requestEmail()
                 .build();
         // Build a GoogleApiClient with access to the Google Sign-In API and the
-// options specified by gso.
+        // options specified by gso.
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
@@ -175,10 +182,36 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
             @Override
             public void onClick(View view) {
                 if (!validate()) {
+                    Auth.GoogleSignInApi.signOut(mGoogleApiClient);
                     return;
                 }
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
                 startActivityForResult(signInIntent, RC_SIGN_IN);
+            }
+        });
+
+        // Initialize Facebook Login button
+        mCallbackManager = CallbackManager.Factory.create();
+
+        facebookSignIn.setReadPermissions("email", "public_profile");
+        facebookSignIn.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                if (!validate()) {
+                    LoginManager.getInstance().logOut();
+                    return;
+                }
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                showMessage("Đăng nhập thất bại!!!");
             }
         });
     }
@@ -223,15 +256,39 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         Log.d("ESOS", "firebaseAuthWithGoogle:" + acct.getId());
-
+        mProgressBar.show();
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
+                        mProgressBar.dismiss();
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             FirebaseUser user = mAuth.getCurrentUser();
+                            CommonUtils.putPref(ESoSApplication.getInstance(), Constants.SIGNIN_METHOD_KEY, Constants.SignIn.GOOGLE.ordinal());
+                            signInSuccessfull();
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            showMessage("Đăng nhập thất bại!!!");
+                        }
+                    }
+                });
+    }
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        Log.d("ESOS", "handleFacebookAccessToken:" + token);
+        mProgressBar.show();
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        mProgressBar.dismiss();
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            CommonUtils.putPref(ESoSApplication.getInstance(), Constants.SIGNIN_METHOD_KEY, Constants.SignIn.FACEBOOK.ordinal());
                             signInSuccessfull();
                         } else {
                             // If sign in fails, display a message to the user.
@@ -244,6 +301,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     private void signInSuccessfull() {
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.PHONE_NUMBER_KEY, edPhoneNumber.getText());
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_NAME_KEY, edFullname.getText());
+        CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY, listUserType.get(objectTypeSpinner.getSelectedItemPosition()).getTypeUser().ordinal());
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
         finish();
