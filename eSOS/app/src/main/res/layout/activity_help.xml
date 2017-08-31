@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <android.support.design.widget.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbarHelp"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:dividerPadding="8dp">
+                    <Button
+                        android:id="@+id/btHelpCancel"
+                        style="@style/TextAppearance.Widget.AppCompat.Toolbar.Subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackground"
+                        android:drawableLeft="@drawable/ic_action_back"
+                        android:drawablePadding="8dp"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="16dp"
+                        android:paddingRight="16dp"
+                        android:layout_alignParentLeft="true"
+                        android:textAllCaps="true" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12pt"
+                        android:textColor="#fff"
+                        android:layout_centerVertical="true"
+                        android:layout_centerHorizontal="true"
+                        android:text="Trợ giúp"/>
+                </RelativeLayout>
+            </android.support.v7.widget.Toolbar>
+        </android.support.design.widget.AppBarLayout>
+        <ScrollView
+            android:id="@+id/scrollViewHelp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+            android:fillViewport="true">
+
+            <TextView
+                android:id="@+id/TEXT_STATUS_ID"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:textSize="9pt"
+                android:paddingTop="10dp"
+                android:lineSpacingExtra="5pt"
+                android:text="  1. Tác nhân Trung tâm cấp cứu BV 198: là trung tâm điều hành hệ thống cấp cứu điện tử co nhiệm vụ tiếp nhận các tình huống cấp cứu và điều phối các nguồn lực cũng như hoạt động của các nguồn lực dựa trên nền tảng bản đồ số của Google.\n
+        Trung tâm có thể sử dụng hệ thống bản đồ số để theo dõi vị trí các nguồn lực theo thời gian thực.\n
+        Điều phối nguồn lực dựa trên hệ thống bản đồ số kết hợp với hệ thống hạ tầng viễn thông.\n
+        Bộ phận điều hành: gồm (1)người trực, vật tư trang thiết bị và thuốc (cho 2-3 tổ cấp cứu lưu động tại trung tâm); (2) Phần mềm lưu giữ dữ liệu: paraeidic (mô hình cấp cứu Mỹ). Trong mô hình này có chương trình là Pro QA với 1500 phác đồ cấp cứu; (3) Hồ sơ sức khỏe điện tử của CBCS CA lấy theo số thẻ BHYT; (4) Tư vấn sức khỏe cấp cứu.\n
+        Trực trung tâm.\n
+        Tổ cấp cứu lưu động thường trực tại trung tâm: 2-3 tổ.\n\n
+  2. Tác nhân cơ sở Y tế ở các đơn vị: \n
+        Tổ cấp cưu lưu động tại các đơn vị CA được cấp phép khám chữa bệnh tại các cơ sở y tế: K10, K20, BV CA HÀ NỘI, HV AN NINH, HV CẢNH SÁT, Phòng y tế tổng cục cảnh sat 47 Phạm Văn Đồng, Phòng y tế cơ quan Bộ (H51) ở 47 Phạm Văn đồng và 40 Hàng Bài và44 yết kiêu\n
+        Tác nhân này thể hiện trên hệ thống bản đồ số một cách cố định và có thể thực hiện click-and-call từ trung tâm điều phối cấp cứu BV 198.\n
+        Tác nhân này có nhiệm vụ tiếp nhận và xử lý thông tin điều khiển từ Trung tâm cấp cứu BV 198.\n
+        Sử dụng các ứng dụng bản đồ số của hệ thống để xác định toạ độ điểm xảy ra tình huống cấp cứu và xác định đường đi ngắn nhất đến điểm cấp cứu.\n\n
+  3. Tác nhân Tổ cấp cứu lưu động:  bao gồm xe cấp cứu và các cá nhân, thiết bị liên quan. Đây là tác nhân di động, vị trí có thể thay đổi trên bản đồ số theo thời gian thực.\n\n
+  4. Tác nhân lực lượng được đào tạo sơ cứu cấp cứu: bao gồm cảnh sát giao thông, 114, K20 tham gia vào hệ thống với vai trò tiếp nhận các lệnh điều phối cấp cứu từ trung tâm cấp cứu BV 198.\n\n
+  5. Tác nhân người gọi cấp cứu: là người có trách nhiệm gọi cấp cứu tại vị trí xảy ra sự kiện cấp cứu.\n
+        Người gọi cấp cứu sử dụng hệ thống để gọi về trung tâm thông qua mô-đun tiếp nhận tình huống.\n
+        Người gọi cấp cứu cũng sử dụng các mô-đun để hiển thị trạng thái di chuyển của nguồn lực tham gia vào tình huống cấp cứu do trung tâm điều phối chỉ định.\n\n
+  Kết nối trung tâm cấp cứ bộ công an với các Bệnh viện ngoài ngành( các khoa hồi sức cấp cứu và chống độc), với trung tâm cấp cứu 115 Hà Nội..\n
+"/>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

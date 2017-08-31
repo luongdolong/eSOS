@@ -2,6 +2,7 @@ package com.xyz.automate.esos;
 
 import android.app.Application;
 import android.content.Context;
+import android.provider.Settings;
 
 import com.google.firebase.FirebaseApp;
 
@@ -24,7 +25,11 @@ public class ESoSApplication extends Application {
         }
     }
 
-    public static Context getInstance() {
+    public static ESoSApplication getInstance() {
         return mInstance;
     }
+    public String uDiD() {
+        return Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+    }
+
 }

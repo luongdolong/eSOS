@@ -1,5 +1,6 @@
 package com.xyz.automate.esos.activity;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,7 +19,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.facebook.login.LoginManager;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.xyz.automate.esos.ESoSApplication;
 import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.common.CommonUtils;
@@ -34,6 +38,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private TextView tvPhonenumber;
     private ImageView avatar;
     private Constants.UserType userType;
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +62,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         drawer.setDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
+
+        FirebaseApp.initializeApp(getApplicationContext());
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").onDisconnect().setValue(Constants.OFFLINE);
+
         displayUserInfo();
+        updateUserInfo();
     }
 
     @Override
@@ -95,11 +106,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_setting) {
-
+            Intent intent = new Intent(this, SettingActivity.class);
+            startActivityForResult(intent, SettingActivity.RC_SETTING_SCREEN);
         } else if (id == R.id.nav_help) {
-
+            Intent intent = new Intent(this, HelpActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_about) {
-
+            Intent intent = new Intent(this, AboutActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_logout) {
             actionLogout();
         }
@@ -108,6 +122,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         drawer.closeDrawer(GravityCompat.START);
 
         return false;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (SettingActivity.RC_SETTING_SCREEN == requestCode) {
+            if (resultCode == Activity.RESULT_OK) {
+                updateUserInfo();
+                displayUserInfo();
+            }
+        }
     }
 
     private void displayUserInfo() {
@@ -146,6 +170,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 avatar.setImageResource(R.mipmap.ic_user_avatar);
                 break;
         }
+    }
+
+    private void updateUserInfo() {
+        String value = CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_NAME_KEY);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("name").setValue(value);
+        value = CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.PHONE_NUMBER_KEY);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("tel").setValue(value);
+        int type = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("type").setValue(type);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").setValue(Constants.ONLINE);
     }
 
     private void actionLogout() {
