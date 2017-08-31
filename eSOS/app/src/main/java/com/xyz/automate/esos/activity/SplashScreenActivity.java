@@ -26,6 +26,12 @@ public class SplashScreenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
         mProgressBar = new ProgressInfDialog(this);
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         mProgressBar.show();
         new AuthenticateFirebaseTask(this).execute();
     }
