@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.facebook.login.LoginManager;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -132,6 +133,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 displayUserInfo();
             }
         }
+    }
+
+    public void updateLocation(LatLng latLng) {
     }
 
     private void displayUserInfo() {
