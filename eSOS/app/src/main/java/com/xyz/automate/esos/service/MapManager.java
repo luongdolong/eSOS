@@ -180,9 +180,9 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         Circle circle = mMap.addCircle(new CircleOptions()
                 .center(location)
                 .radius(1000)
-                .strokeWidth(1)
-                .strokeColor(Color.RED)
-                .fillColor(Color.YELLOW));
+                .strokeWidth(2)
+                .strokeColor(0xffff0000)
+                .fillColor(0x44ff0000));
 
         if (makeMove) {
             move(location, null);
