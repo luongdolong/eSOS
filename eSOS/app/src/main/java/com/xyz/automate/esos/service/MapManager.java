@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,10 +20,17 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.xyz.automate.esos.ESoSApplication;
+import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.activity.HomeActivity;
+import com.xyz.automate.esos.common.CommonUtils;
+import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.object.User;
 
 import java.util.ArrayList;
@@ -37,6 +46,7 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
     private HomeActivity mContext;
     private EoSLocationListener myLocationListener;
     private Location mCurrentLocation;
+    private Constants.UserType userType;
     private List<User> pointers = new ArrayList<>();
 
     public MapManager(GoogleMap map, HomeActivity context) {
@@ -44,6 +54,27 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         mLocationMgr = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         mContext = context;
         myLocationListener = new EoSLocationListener();
+        int type = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
+        switch (type) {
+            case 0:
+                userType = Constants.UserType.CoordinationCenter;
+                break;
+            case 1:
+                userType = Constants.UserType.HealthEstablishment;
+                break;
+            case 2:
+                userType = Constants.UserType.EmergencyGroup;
+                break;
+            case 3:
+                userType = Constants.UserType.TrafficPolice;
+                break;
+            case 4:
+                userType = Constants.UserType.EndUser;
+                break;
+            default:
+                userType = Constants.UserType.EndUser;
+                break;
+        }
     }
 
     public boolean initMap() {
@@ -119,19 +150,40 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         mMap.animateCamera(CameraUpdateFactory.zoomTo(v), 2000, null);
     }
 
-    private Marker addMarkerDefault(String title, String snippet, LatLng location, Float idIcon, boolean makeMove) {
+    private Marker addMarkerDefault(String title, String snippet, LatLng location, Constants.UserType type, boolean makeMove) {
         MarkerOptions mark = new MarkerOptions();
         mark.visible(true);
         mark.title(title);
         mark.snippet(snippet);
         mark.position(location);
         mark.draggable(false);
-        if (idIcon != null) {
-            mark.icon(BitmapDescriptorFactory.defaultMarker(idIcon));
+
+        if (Constants.UserType.CoordinationCenter == type) {
+            mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
+                    BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_hospital_center), 40, 40)));
+        } else if (Constants.UserType.HealthEstablishment == type) {
+            mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
+                    BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_medical_bag), 40, 40)));
+        } else if (Constants.UserType.EmergencyGroup == type) {
+            mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
+                    BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_ambulance), 40, 40)));
+        } else if (Constants.UserType.TrafficPolice == type) {
+            mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
+                    BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_policeman), 40, 40)));
+        } else if (Constants.UserType.EndUser == type){
+            mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
+                    BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
         } else {
             mark.icon(BitmapDescriptorFactory.defaultMarker());
         }
         Marker marker = mMap.addMarker(mark);
+        Circle circle = mMap.addCircle(new CircleOptions()
+                .center(location)
+                .radius(1000)
+                .strokeWidth(1)
+                .strokeColor(Color.RED)
+                .fillColor(Color.YELLOW));
+
         if (makeMove) {
             move(location, null);
         }
@@ -147,13 +199,35 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             }
             return;
         }
-        //String username = CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY);
-        //String phone = CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY);
-        addMarkerDefault("", "", new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), null, true);
+        String title;
+        String snippet = CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY);
+        if (Constants.UserType.CoordinationCenter == userType) {
+            title = mContext.getString(R.string.coordination_center);
+            LatLng latLng = new LatLng(Double.parseDouble(mContext.getString(R.string.lat_location_198_hospital)),
+                    Double.parseDouble(mContext.getString(R.string.lon_location_198_hospital)));
+            addMarkerDefault(title, snippet, latLng, userType, true);
+        } else if (Constants.UserType.HealthEstablishment == userType) {
+            title = mContext.getString(R.string.health_establishment);
+            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            addMarkerDefault(title, snippet, latLng, userType, true);
+        } else if (Constants.UserType.EmergencyGroup == userType) {
+            title = mContext.getString(R.string.emergency_group);
+            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            addMarkerDefault(title, snippet, latLng, userType, true);
+        } else if (Constants.UserType.TrafficPolice == userType) {
+            title = mContext.getString(R.string.traffic_police);
+            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            addMarkerDefault(title, snippet, latLng, userType, true);
+        } else {
+            title = CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY);
+            snippet = CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY);
+            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            addMarkerDefault(title, snippet, latLng, null, true);
+        }
     }
 
     private void addLocation(String username, String tel, LatLng latLng) {
-        addMarkerDefault(username, tel, latLng, BitmapDescriptorFactory.HUE_AZURE, false);
+        addMarkerDefault(username, tel, latLng, null, false);
     }
 
     public void resetMap() {

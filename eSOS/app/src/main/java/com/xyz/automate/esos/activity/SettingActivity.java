@@ -21,7 +21,6 @@ import com.xyz.automate.esos.common.Constants;
  */
 
 public class SettingActivity extends Activity {
-    public static final int RC_SETTING_SCREEN = 1900;
 
     private Button btSettingCancel;
     private Button btSettingSave;

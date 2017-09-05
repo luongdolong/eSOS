@@ -10,6 +10,7 @@
     <string name="emergency_group">Tổ cấp cứu lưu động</string>
     <string name="traffic_police">Cảnh sát Giao thông</string>
     <string name="end_user">Người dùng thông thường</string>
-
+    <string name="lat_location_198_hospital">21.033533</string>
+    <string name="lon_location_198_hospital">105.777932</string>
     <string name="info_msg_001">Bạn có muốn đăng xuất?</string>
 </resources>

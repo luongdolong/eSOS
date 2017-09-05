@@ -8,6 +8,9 @@ public class Constants {
     public enum UserType { CoordinationCenter, HealthEstablishment, EmergencyGroup, TrafficPolice, EndUser}
     public enum SignIn { GOOGLE, FACEBOOK}
 
+    public static final int RC_SETTING_SCREEN = 1900;
+    public static final int RC_ALLOW_GPS = 1901;
+
     public final static int ONLINE = 1;
     public final static int OFFLINE = 0;
     public final static String EMPTY = "";
