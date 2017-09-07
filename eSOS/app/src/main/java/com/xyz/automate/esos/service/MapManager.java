@@ -1,6 +1,8 @@
 package com.xyz.automate.esos.service;
 
 import android.Manifest;
+import android.animation.IntEvaluator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -13,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -34,7 +37,9 @@ import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.object.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by LuongDoLong on 9/4/2017.
@@ -47,7 +52,9 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
     private EoSLocationListener myLocationListener;
     private Location mCurrentLocation;
     private Constants.UserType userType;
-    private List<User> pointers = new ArrayList<>();
+    private List<User> users = new ArrayList<>();
+    private List<ValueAnimator> valueAnimators = new ArrayList<>();
+    private Map<String, String> mapUser = new HashMap<String, String>();
 
     public MapManager(GoogleMap map, HomeActivity context) {
         mMap = map;
@@ -177,16 +184,33 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             mark.icon(BitmapDescriptorFactory.defaultMarker());
         }
         Marker marker = mMap.addMarker(mark);
-        Circle circle = mMap.addCircle(new CircleOptions()
+        final Circle circle = mMap.addCircle(new CircleOptions()
                 .center(location)
                 .radius(1000)
                 .strokeWidth(2)
                 .strokeColor(0xffff0000)
                 .fillColor(0x44ff0000));
 
+        ValueAnimator valueAnimator = new ValueAnimator();
+        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+        valueAnimator.setIntValues(0, 1000);
+        valueAnimator.setDuration(6000);
+        valueAnimator.setEvaluator(new IntEvaluator());
+        valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                float animatedFraction = valueAnimator.getAnimatedFraction();
+                circle.setRadius(animatedFraction * 1000 * 2);
+            }
+        });
+        valueAnimator.start();
+        valueAnimators.add(valueAnimator);
         if (makeMove) {
             move(location, null);
         }
+
         return marker;
     }
 
@@ -235,8 +259,14 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             return;
         }
         mMap.clear();
+        mapUser.clear();
+        for (ValueAnimator v : valueAnimators) {
+            v.cancel();
+            v.end();
+        }
+        valueAnimators.clear();
         updateUserLocation();
-        for (User u : pointers) {
+        for (User u : users) {
 //            if (u == null || u.getLatLng() == null) {
 //                continue;
 //            }
