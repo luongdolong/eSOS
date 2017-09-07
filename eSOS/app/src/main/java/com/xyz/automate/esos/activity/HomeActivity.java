@@ -11,6 +11,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -20,7 +21,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.facebook.login.LoginManager;
@@ -35,9 +38,14 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.skyfishjy.library.RippleBackground;
 import com.xyz.automate.esos.ESoSApplication;
 import com.xyz.automate.esos.R;
+import com.xyz.automate.esos.adapter.SpinnerTypeUserAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
+import com.xyz.automate.esos.object.UserTypeData;
 import com.xyz.automate.esos.service.MapManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by LuongDoLong on 8/28/2017.
@@ -119,6 +127,20 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_status, menu);
+
+        MenuItem item = menu.findItem(R.id.toolbarSpinner);
+        Spinner spinner = (Spinner) MenuItemCompat.getActionView(item);
+
+        ArrayList<UserTypeData> listUserType = new ArrayList<>();
+        listUserType.add(new UserTypeData(Constants.UserType.CoordinationCenter, getString(R.string.coordination_center)));
+        listUserType.add(new UserTypeData(Constants.UserType.HealthEstablishment, getString(R.string.health_establishment)));
+        listUserType.add(new UserTypeData(Constants.UserType.EmergencyGroup, getString(R.string.emergency_group)));
+        listUserType.add(new UserTypeData(Constants.UserType.TrafficPolice, getString(R.string.traffic_police)));
+        listUserType.add(new UserTypeData(Constants.UserType.EndUser, getString(R.string.end_user)));
+        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listUserType);
+
+        spinner.setAdapter(adapter);
         return true;
     }
 
