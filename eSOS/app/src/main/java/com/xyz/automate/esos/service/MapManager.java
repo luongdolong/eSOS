@@ -31,6 +31,7 @@ import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.activity.HomeActivity;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
+import com.xyz.automate.esos.object.GroupUser;
 import com.xyz.automate.esos.object.User;
 
 import java.util.ArrayList;
@@ -49,9 +50,10 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
     private EoSLocationListener myLocationListener;
     private Location mCurrentLocation;
     private Constants.UserType userType;
-    private List<User> users = new ArrayList<>();
+    private int sos = Constants.OFF_SOS;
+    private List<GroupUser> users = new ArrayList<>();
     private List<ValueAnimator> valueAnimators = new ArrayList<>();
-    private Map<String, String> mapUser = new HashMap<String, String>();
+    private Map<String, GroupUser> mapUser = new HashMap<String, GroupUser>();
 
     public MapManager(GoogleMap map, HomeActivity context) {
         mMap = map;
@@ -117,7 +119,9 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-
+        if (mapUser.containsKey(marker.getId())) {
+            mContext.actionChooseLocation(mapUser.get(marker.getId()));
+        }
     }
 
     private boolean checkPermission() {
@@ -154,12 +158,16 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         mMap.animateCamera(CameraUpdateFactory.zoomTo(v), 2000, null);
     }
 
-    private Marker addMarkerDefault(String title, String snippet, LatLng location, Constants.UserType type, boolean makeMove) {
+    private Marker addMarkerDefault(GroupUser group, boolean makeMove) {
+        if (group.users == null && group.users.isEmpty()) {
+            return null;
+        }
+        Constants.UserType type = group.getTypeGroup();
         MarkerOptions mark = new MarkerOptions();
+        mark.title(group.getTitleGroup(mContext));
+        mark.snippet(group.getSnippetGroup(mContext));
         mark.visible(true);
-        mark.title(title);
-        mark.snippet(snippet);
-        mark.position(location);
+        mark.position(group.getLocationGroup());
         mark.draggable(false);
 
         if (Constants.UserType.CoordinationCenter == type) {
@@ -177,37 +185,39 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         } else if (Constants.UserType.EndUser == type){
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
+            if (Constants.ON_SOS == group.users.get(0).getSos()) {
+                final Circle circle = mMap.addCircle(new CircleOptions()
+                        .center(group.getLocationGroup())
+                        .radius(1000)
+                        .strokeWidth(2)
+                        .strokeColor(0xffff0000)
+                        .fillColor(0x44ff0000));
+
+                ValueAnimator valueAnimator = new ValueAnimator();
+                valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+                valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+                valueAnimator.setIntValues(0, 1000);
+                valueAnimator.setDuration(6000);
+                valueAnimator.setEvaluator(new IntEvaluator());
+                valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+                valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                        float animatedFraction = valueAnimator.getAnimatedFraction();
+                        circle.setRadius(animatedFraction * 1000 * 2);
+                    }
+                });
+                valueAnimator.start();
+                valueAnimators.add(valueAnimator);
+            }
         } else {
             mark.icon(BitmapDescriptorFactory.defaultMarker());
         }
         Marker marker = mMap.addMarker(mark);
-        final Circle circle = mMap.addCircle(new CircleOptions()
-                .center(location)
-                .radius(1000)
-                .strokeWidth(2)
-                .strokeColor(0xffff0000)
-                .fillColor(0x44ff0000));
-
-        ValueAnimator valueAnimator = new ValueAnimator();
-        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        valueAnimator.setRepeatMode(ValueAnimator.RESTART);
-        valueAnimator.setIntValues(0, 1000);
-        valueAnimator.setDuration(6000);
-        valueAnimator.setEvaluator(new IntEvaluator());
-        valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                float animatedFraction = valueAnimator.getAnimatedFraction();
-                circle.setRadius(animatedFraction * 1000 * 2);
-            }
-        });
-        valueAnimator.start();
-        valueAnimators.add(valueAnimator);
+        mapUser.put(marker.getId(), group);
         if (makeMove) {
-            move(location, null);
+            move(group.getLocationGroup(), null);
         }
-
         return marker;
     }
 
@@ -220,35 +230,42 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             }
             return;
         }
-        String title;
-        String snippet = CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY);
+        GroupUser group = new GroupUser();
+        User user = new User();
+        user.setMe(true);
+        user.setStatus(Constants.ONLINE);
+        user.setSos(sos);
+        user.setType(userType);
+        user.setUserId(ESoSApplication.getInstance().uDiD());
+        user.setUserName(CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY));
+        user.setPhoneNumber(CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY));
         if (Constants.UserType.CoordinationCenter == userType) {
-            title = mContext.getString(R.string.coordination_center);
-            LatLng latLng = new LatLng(Double.parseDouble(mContext.getString(R.string.lat_location_198_hospital)),
-                    Double.parseDouble(mContext.getString(R.string.lon_location_198_hospital)));
-            addMarkerDefault(title, snippet, latLng, userType, true);
+            user.setLat(Double.parseDouble(mContext.getString(R.string.lat_location_198_hospital)));
+            user.setLng(Double.parseDouble(mContext.getString(R.string.lon_location_198_hospital)));
+            user.setUnitName(mContext.getString(R.string.coordination_center));
         } else if (Constants.UserType.HealthEstablishment == userType) {
-            title = mContext.getString(R.string.health_establishment);
-            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-            addMarkerDefault(title, snippet, latLng, userType, true);
+            user.setLat(mCurrentLocation.getLatitude());
+            user.setLng(mCurrentLocation.getLongitude());
+            user.setUnitName(mContext.getString(R.string.health_establishment));
         } else if (Constants.UserType.EmergencyGroup == userType) {
-            title = mContext.getString(R.string.emergency_group);
-            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-            addMarkerDefault(title, snippet, latLng, userType, true);
+            user.setLat(mCurrentLocation.getLatitude());
+            user.setLng(mCurrentLocation.getLongitude());
+            user.setUnitName(mContext.getString(R.string.emergency_group));
         } else if (Constants.UserType.TrafficPolice == userType) {
-            title = mContext.getString(R.string.traffic_police);
-            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-            addMarkerDefault(title, snippet, latLng, userType, true);
+            user.setLat(mCurrentLocation.getLatitude());
+            user.setLng(mCurrentLocation.getLongitude());
+            user.setUnitName(mContext.getString(R.string.traffic_police));
         } else {
-            title = CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY);
-            snippet = CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY);
-            LatLng latLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-            addMarkerDefault(title, snippet, latLng, null, true);
+            user.setLat(mCurrentLocation.getLatitude());
+            user.setLng(mCurrentLocation.getLongitude());
+            user.setUnitName(mContext.getString(R.string.end_user));
         }
+        group.users.add(user);
+        addMarkerDefault(group, false);
     }
 
-    private void addLocation(String username, String tel, LatLng latLng) {
-        addMarkerDefault(username, tel, latLng, null, false);
+    private void addLocation(GroupUser groupUser) {
+        addMarkerDefault(groupUser, false);
     }
 
     public void resetMap() {
@@ -263,11 +280,11 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         }
         valueAnimators.clear();
         updateUserLocation();
-        for (User u : users) {
-//            if (u == null || u.getLatLng() == null) {
-//                continue;
-//            }
-//            addLocation(loc.getUsername(), loc.getPhoneNumber(), loc.getLatLng());
+        for (GroupUser groupUser : users) {
+            if (groupUser == null || groupUser.users.isEmpty()) {
+                continue;
+            }
+            addLocation(groupUser);
         }
     }
 

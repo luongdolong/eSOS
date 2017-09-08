@@ -2,16 +2,17 @@ package com.xyz.automate.esos.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -21,10 +22,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.Spinner;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.facebook.login.LoginManager;
 import com.google.android.gms.maps.GoogleMap;
@@ -38,10 +40,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.skyfishjy.library.RippleBackground;
 import com.xyz.automate.esos.ESoSApplication;
 import com.xyz.automate.esos.R;
-import com.xyz.automate.esos.adapter.SpinnerTypeUserAdapter;
+import com.xyz.automate.esos.adapter.MenuContactAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
-import com.xyz.automate.esos.object.UserTypeData;
+import com.xyz.automate.esos.object.GroupUser;
+import com.xyz.automate.esos.object.User;
+import com.xyz.automate.esos.service.LocationService;
 import com.xyz.automate.esos.service.MapManager;
 
 import java.util.ArrayList;
@@ -59,8 +63,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private RippleBackground rippleBackground;
     private ImageView centerImageSoS;
     private FloatingActionButton fab;
+    private Intent serviceBg;
     private boolean isMapInitSuccess = false;
     private Constants.UserType userType;
+    private String currentCall = "";
     private DatabaseReference mDatabase;
     private MapManager mapManager;
     private boolean isSoSing;
@@ -107,11 +113,23 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (isMapInitSuccess) {
             mapManager.requestCurrentLocation();
         }
+        if (serviceBg != null) {
+            stopService(serviceBg);
+        }
         displayUserInfo();
         if (!isMapInitSuccess) {
             initMap();
         }
         setupControl();
+    }
+
+    @Override
+    public void onPause() {
+        if (serviceBg == null) {
+            serviceBg = new Intent(this, LocationService.class);
+        }
+        startService(serviceBg);
+        super.onPause();
     }
 
     @Override
@@ -126,21 +144,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_status, menu);
-
-        MenuItem item = menu.findItem(R.id.toolbarSpinner);
-        Spinner spinner = (Spinner) MenuItemCompat.getActionView(item);
-
-        ArrayList<UserTypeData> listUserType = new ArrayList<>();
-        listUserType.add(new UserTypeData(Constants.UserType.CoordinationCenter, getString(R.string.coordination_center)));
-        listUserType.add(new UserTypeData(Constants.UserType.HealthEstablishment, getString(R.string.health_establishment)));
-        listUserType.add(new UserTypeData(Constants.UserType.EmergencyGroup, getString(R.string.emergency_group)));
-        listUserType.add(new UserTypeData(Constants.UserType.TrafficPolice, getString(R.string.traffic_police)));
-        listUserType.add(new UserTypeData(Constants.UserType.EndUser, getString(R.string.end_user)));
-        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listUserType);
-
-        spinner.setAdapter(adapter);
         return true;
     }
 
@@ -196,11 +199,26 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                                            String permissions[], int[] grantResults) {
         if (requestCode == Constants.RC_ALLOW_GPS) {
             initMap();
+        } else if (requestCode == Constants.RC_ALLOW_CALL) {
+            actionCall(currentCall);
         }
     }
 
     public void updateLocation(LatLng latLng) {
     }
+
+    public void actionChooseLocation(final GroupUser groupUser) {
+        if (Constants.UserType.EndUser == groupUser.getTypeGroup()) {
+
+        } else {
+            if (groupUser.users.size() == 1 &&  !ESoSApplication.getInstance().uDiD().equals(groupUser.users.get(0).getUserId())) {
+                callPhone(groupUser.users.get(0).getPhoneNumber());
+            } else {
+                makeListCall(groupUser);
+            }
+        }
+    }
+
 
     private void displayUserInfo() {
         tvFullname.setText(CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_NAME_KEY));
@@ -271,22 +289,59 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupControl() {
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isSoSing) {
-                    isSoSing = false;
-                    centerImageSoS.setVisibility(View.GONE);
-                    rippleBackground.stopRippleAnimation();
-                    fab.setImageResource(R.drawable.ic_call48);
-                } else {
-                    isSoSing = true;
-                    centerImageSoS.setVisibility(View.VISIBLE);
-                    rippleBackground.startRippleAnimation();
-                    fab.setImageResource(R.drawable.ic_cancel48);
-                }
+        if (Constants.UserType.HealthEstablishment == userType || Constants.UserType.CoordinationCenter == userType) {
+            fab.hide();
+        } else {
+            fab.show();
+            if (Constants.UserType.TrafficPolice == userType || Constants.UserType.EmergencyGroup == userType) {
+                fab.setImageResource(R.drawable.ic_cancel48);
             }
-        });
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    actionEmergency();
+                }
+            });
+        }
+    }
+
+    private void actionEmergency() {
+        String title;
+        if (Constants.UserType.TrafficPolice == userType || Constants.UserType.EmergencyGroup == userType) {
+            title = getString(R.string.info_msg_004);
+        }   else if (isSoSing) {
+            title = getString(R.string.info_msg_004);
+        } else {
+            title = getString(R.string.info_msg_003);
+        }
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Xác nhận")
+                .setMessage(title)
+                .setPositiveButton("Có", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (Constants.UserType.TrafficPolice == userType || Constants.UserType.EmergencyGroup == userType) {
+                            //TODO action cancel sos
+                            return;
+                        }
+                        if (isSoSing) {
+                            isSoSing = false;
+                            centerImageSoS.setVisibility(View.GONE);
+                            rippleBackground.stopRippleAnimation();
+                            fab.setImageResource(R.drawable.ic_call48);
+                            //TODO action cancel sos
+                        } else {
+                            isSoSing = true;
+                            centerImageSoS.setVisibility(View.VISIBLE);
+                            rippleBackground.startRippleAnimation();
+                            fab.setImageResource(R.drawable.ic_cancel48);
+                            //TODO action call sos
+                        }
+                    }
+                })
+                .setNegativeButton("Không", null)
+                .show();
     }
 
     private void initMap() {
@@ -338,4 +393,86 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         startActivity(intent);
         finish();
     }
+
+    private void makeListCall(final GroupUser groupUser) {
+        final ArrayList<User> users = new ArrayList<>();
+        for(User u : groupUser.users) {
+            if (!ESoSApplication.getInstance().uDiD().equals(u.getUserId())) {
+                users.add(u);
+            }
+        }
+        if (users.isEmpty()) {
+            return;
+        } else if (users.size() == 1) {
+            callPhone(users.get(0).getPhoneNumber());
+            return;
+        }
+        // custom dialog
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_menu_list);
+        dialog.setTitle("Hãy chọn số điện thoại để gọi");
+        ListView listView = (ListView) dialog.findViewById(R.id.menuList);
+        MenuContactAdapter adapter = new MenuContactAdapter(new ArrayList<>(users), this);
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                dialog.dismiss();
+                callPhone(users.get(position).getPhoneNumber());
+            }
+        });
+        dialog.setCancelable(true);
+        dialog.show();
+    }
+
+    private void callPhone(final String phone) {
+        currentCall = phone;
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Xác nhận")
+                .setMessage(String.format("Bạn muốn gọi tới số: %s", phone))
+                .setPositiveButton("Gọí", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        actionCall(phone);
+                    }
+                })
+                .setNegativeButton("Không", null)
+                .show();
+    }
+
+    private void actionCall(String mobileNo) {
+        boolean allow = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (getApplicationContext().checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                // Should we show an explanation?
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.CALL_PHONE)) {
+                    requestPermissions(new String[]{Manifest.permission.CALL_PHONE}, Constants.RC_ALLOW_CALL);
+                    allow = false;
+                } else {
+                    allow = false;
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, Constants.RC_ALLOW_CALL);
+                }
+            }
+        } else if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            allow = false;
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, Constants.RC_ALLOW_CALL);
+        }
+        if (!allow) {
+            return;
+        }
+
+        try {
+            String uri = "tel:" + mobileNo.trim();
+            Intent intent = new Intent(Intent.ACTION_CALL);
+            intent.setData(Uri.parse(uri));
+            this.startActivity(intent);
+        } catch (SecurityException ex) {
+            Toast.makeText(getApplicationContext(), "Error in your phone call "+ ex.getMessage(), Toast.LENGTH_LONG).show();
+        } catch (Exception ex) {
+            Toast.makeText(getApplicationContext(), "Error in your phone call "+ ex.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
 }

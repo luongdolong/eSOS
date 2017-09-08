@@ -1,10 +1,14 @@
 package com.xyz.automate.esos.object;
 
+import com.xyz.automate.esos.common.Constants;
+
 /**
  * Created by LuongDoLong on 9/4/2017.
  */
 
 public class User {
+    private String userId;
+    private Constants.UserType type;
     private String unitName;
     private String userName;
     private String phoneNumber;
@@ -15,6 +19,22 @@ public class User {
     private int sos;    // 0: normal,  1: call sos
     private String sostime;
     private String lastupdate;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public Constants.UserType getType() {
+        return type;
+    }
+
+    public void setType(Constants.UserType type) {
+        this.type = type;
+    }
 
     public String getUnitName() {
         return unitName;

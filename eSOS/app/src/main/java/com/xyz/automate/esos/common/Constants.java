@@ -10,9 +10,12 @@ public class Constants {
 
     public static final int RC_SETTING_SCREEN = 1900;
     public static final int RC_ALLOW_GPS = 1901;
+    public static final int RC_ALLOW_CALL = 1902;
 
     public final static int ONLINE = 1;
     public final static int OFFLINE = 0;
+    public final static int ON_SOS = 1;
+    public final static int OFF_SOS = 0;
     public final static String EMPTY = "";
     public final static String FROM_HOME_TO_LOGIN_FLAG = "FROM_HOME_TO_LOGIN_FLAG";
     public final static String PHONE_NUMBER_KEY = "PhoneNumber";
