@@ -6,7 +6,6 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -461,7 +460,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         listUser.add(g);
                     }
                 }
-                determineDestination();
+                determineDestination(mapUser);
                 if (mapManager != null) {
                     mapManager.updatePartner(listUser, true);
                 } else {
