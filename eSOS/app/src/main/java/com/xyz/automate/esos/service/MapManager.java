@@ -176,13 +176,13 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         } else if (Constants.END_USER == agentGroup){
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
-            if (Constants.ON_SOS == group.users.get(0).getSos()) {
+            if (Constants.ON_SOS == group.users.get(0).getSos() && !group.users.get(0).isMe()) {
                 final Circle circle = mMap.addCircle(new CircleOptions()
                         .center(group.getLocationGroup())
                         .radius(1000)
                         .strokeWidth(2)
                         .strokeColor(0xffff0000)
-                        .fillColor(0x44ff0000));
+                        .fillColor(CommonUtils.isEmpty(group.users.get(0).getObjective()) ? 0x44ff0000 : 0x44009900));
 
                 ValueAnimator valueAnimator = new ValueAnimator();
                 valueAnimator.setRepeatCount(ValueAnimator.INFINITE);

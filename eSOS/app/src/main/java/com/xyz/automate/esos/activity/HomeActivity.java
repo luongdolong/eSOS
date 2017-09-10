@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -47,6 +48,7 @@ import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.adapter.MenuContactAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
+import com.xyz.automate.esos.common.DateUtils;
 import com.xyz.automate.esos.object.GroupUser;
 import com.xyz.automate.esos.object.MedicalAgent;
 import com.xyz.automate.esos.object.User;
@@ -55,6 +57,7 @@ import com.xyz.automate.esos.service.MapManager;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +82,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private DatabaseReference mDatabase;
     private MapManager mapManager;
     private boolean isSoSing;
+    private String objective;
+    private User destination;
     private List<GroupUser> listMapLoc = new ArrayList<>();
 
     @Override
@@ -107,6 +112,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         navigationView.setNavigationItemSelectedListener(this);
 
         isSoSing = false;
+        destination = null;
         FirebaseApp.initializeApp(getApplicationContext());
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").onDisconnect().setValue(Constants.OFFLINE);
@@ -206,8 +212,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (requestCode == Constants.RC_ALLOW_GPS) {
             initMap();
             mapManager.updatePartner(listMapLoc, true);
@@ -230,8 +235,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void actionChooseLocation(final GroupUser groupUser) {
-        if (Constants.END_USER == groupUser.getAgentGroup()) {
-            //TODO
+        if (Constants.END_USER == groupUser.getAgentGroup() && (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent)) {
+            if (isSoSing) {
+                callPhone(groupUser.users.get(0).getPhoneNumber());
+            } else {
+                //TODO action setup sos
+            }
+
         } else {
             if (groupUser.users.size() == 1 &&  !ESoSApplication.getInstance().uDiD().equals(groupUser.users.get(0).getUserId())) {
                 callPhone(groupUser.users.get(0).getPhoneNumber());
@@ -240,7 +250,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
         }
     }
-
 
     private void displayUserInfo() {
         tvFullname.setText(CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_NAME_KEY));
@@ -407,31 +416,36 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void listenerDatabase() {
-        Query myTopPostsQuery = mDatabase.child("users").orderByChild("status").equalTo(Constants.ONLINE);
+        Query myTopPostsQuery = mDatabase.child("users");
         myTopPostsQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Map<String, List<User>> mapUser = new HashMap<>();
                 List<GroupUser> listUser = new ArrayList<>();
                 for (DataSnapshot e : dataSnapshot.getChildren()) {
-                    if (e.getKey().equals(ESoSApplication.getInstance().uDiD())) {
-                        continue;
-                    }
                     User user = e.getValue(User.class);
-                    if (Constants.ON_SOS != user.getSos()) {
+                    user.setUserId(e.getKey());
+                    if (e.getKey().equals(ESoSApplication.getInstance().uDiD())) {
+                        if (isExistTarget(user)) {
+                            objective = user.getObjective();
+                        } else {
+                            objective = Constants.EMPTY;
+                        }
                         continue;
                     }
-                    user.setUserId(e.getKey());
-                    if (Constants.CENTER_HOSPITAL == agent) {
-                        if (Constants.CENTER_HOSPITAL != user.getAgent()) {
-                            addUser2Set(mapUser, user);
-                        }
-                    } else if (Constants.LOCAL_HOSPITAL == agent) {
-                        if  (userType != user.getType()) {
+                    if (Constants.END_USER != user.getAgent() && Constants.ONLINE != user.getStatus()) {
+                        continue;
+                    }
+                    if (Constants.END_USER == agent) {
+                        if (agent != user.getAgent()) {
                             addUser2Set(mapUser, user);
                         }
                     } else {
-                        addUser2Set(mapUser, user);
+                        if (endUserSoS(user)) {
+                            addUser2Set(mapUser, user);
+                        } else if (agent != user.getAgent() && Constants.END_USER != user.getAgent()) {
+                            addUser2Set(mapUser, user);
+                        }
                     }
                 }
                 GroupUser groupUser = new GroupUser();
@@ -447,6 +461,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         listUser.add(g);
                     }
                 }
+                determineDestination();
                 if (mapManager != null) {
                     mapManager.updatePartner(listUser, true);
                 } else {
@@ -501,6 +516,72 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
         }
         return listGroup;
+    }
+
+    private boolean endUserSoS(User user) {
+        if (Constants.END_USER != user.getAgent()) {
+            return false;
+        }
+        if (Constants.ON_SOS == user.getSos() && !CommonUtils.isEmpty(user.getSostime())) {
+            Date d = DateUtils.toDate(user.getSostime(), "yyyyMMddHHmmss");
+            if (!DateUtils.expire(d, 4)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isExistTarget(User user) {
+        if (!isSoSing) {
+            return false;
+        }
+        if (Constants.END_USER == agent &&
+                (Constants.MOBILE_MEDICAL == user.getAgent() || Constants.POLICEMAN == user.getAgent())) {
+            if (!CommonUtils.isEmpty(user.getObjective())) {
+                return true;
+            }
+        }
+        if ((Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent) && Constants.END_USER == user.getAgent()) {
+            if (!CommonUtils.isEmpty(user.getObjective())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void determineDestination(Map<String, List<User>> mapUser) {
+        destination = null;
+        if (!isSoSing || CommonUtils.isEmpty(objective) || mapUser == null) {
+            return;
+        }
+        if (Constants.END_USER != agent && Constants.POLICEMAN != agent && Constants.MOBILE_MEDICAL != agent) {
+            return;
+        }
+        if (Constants.END_USER == agent) {
+            ArrayList<User> listUser = new ArrayList<>();
+            if (mapUser.get(Constants.MOBILE_MEDICAL) != null) {
+                listUser.addAll(mapUser.get(Constants.MOBILE_MEDICAL));
+            }
+            if (mapUser.get(Constants.POLICEMAN) != null) {
+                listUser.addAll(mapUser.get(Constants.POLICEMAN));
+            }
+            for (User u : listUser) {
+                if (objective.equals(u.getUserId())) {
+                    destination = u;
+                    break;
+                }
+            }
+        } else if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+            if (mapUser.get(Constants.END_USER) == null) {
+                return;
+            }
+            for (User u : mapUser.get(Constants.END_USER)) {
+                if (objective.equals(u.getUserId())) {
+                    destination = u;
+                    break;
+                }
+            }
+        }
     }
 
     private void exitHome() {

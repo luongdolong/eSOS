@@ -16,6 +16,7 @@ public class User {
     private int status; // 0: offline, 1: online
     private boolean me;
     private int sos;    // 0: normal,  1: call sos
+    private String objective;
     private String sostime; //yyyyMMddHHmmss
     private String lastupdate;
 
@@ -105,6 +106,14 @@ public class User {
 
     public void setSos(int sos) {
         this.sos = sos;
+    }
+
+    public String getObjective() {
+        return objective;
+    }
+
+    public void setObjective(String objective) {
+        this.objective = objective;
     }
 
     public String getSostime() {
