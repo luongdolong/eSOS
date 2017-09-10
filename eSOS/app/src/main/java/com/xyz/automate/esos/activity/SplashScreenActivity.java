@@ -36,14 +36,14 @@ public class SplashScreenActivity extends AppCompatActivity {
         new AuthenticateFirebaseTask(this).execute();
     }
 
-    private class AuthenticateFirebaseTask extends AsyncTask<Void, Void, Void> {
+    private class AuthenticateFirebaseTask extends AsyncTask<Void, Void, FirebaseUser> {
         private Context mContext;
 
         public AuthenticateFirebaseTask(Context context) {
             mContext = context;
         }
 
-        protected Void doInBackground(Void...params) {
+        protected FirebaseUser doInBackground(Void...params) {
             FirebaseUser user = null;
 
             try {
@@ -55,7 +55,12 @@ public class SplashScreenActivity extends AppCompatActivity {
                 Log.d("ESOS", ex.getMessage());
             }
             mProgressBar.dismiss();
-            if (user == null) {
+
+            return user;
+        }
+
+        protected void onPostExecute(FirebaseUser result) {
+            if (result == null) {
                 Intent intent = new Intent(mContext, LoginActivity.class);
                 startActivity(intent);
             } else {
@@ -63,11 +68,6 @@ public class SplashScreenActivity extends AppCompatActivity {
                 startActivity(intent);
             }
             finish();
-            return null;
-        }
-
-        protected void onPostExecute(Long result) {
-
         }
     }
 }

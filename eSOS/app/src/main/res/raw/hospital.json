@@ -1,0 +1,72 @@
+[
+  {
+    "agent": 1,
+    "unitType": 1000,
+    "unitName": "Trung tâm điều phối cấp cứu BV 198",
+    "lat": 21.033533,
+    "lng": 105.777932
+  },
+  {
+    "agent": 2,
+    "unitType": 2000,
+    "unitName": "Cơ sở Y Tế K10 -  Bộ Công An",
+    "lat": 21.043637,
+    "lng": 105.837581
+  },
+  {
+    "agent": 2,
+    "unitType": 2001,
+    "unitName": "Cơ sở Y Tế K20 -  Bộ Công An",
+    "lat": 21.015522,
+    "lng": 105.803518
+  },
+  {
+    "agent": 2,
+    "unitType": 2002,
+    "unitName": "Bệnh viện Công an Hà nội",
+    "lat": 21.025633,
+    "lng": 105.842001
+  },
+  {
+    "agent": 2,
+    "unitType": 2003,
+    "unitName": "CSYT Học viện ANND",
+    "lat": 20.982167,
+    "lng": 105.790948
+  },
+  {
+    "agent": 2,
+    "unitType": 2004,
+    "unitName": "CSYT Học viện CSND",
+    "lat": 21.066659,
+    "lng": 105.763577
+  },
+  {
+    "agent": 2,
+    "unitType": 2005,
+    "unitName": "Phòng Y tế TCCS 47 Phạm Văn Đồng",
+    "lat": 21.048852,
+    "lng": 105.779970
+  },
+  {
+    "agent": 2,
+    "unitType": 2006,
+    "unitName": "Phòng Y tế cơ quan BCA 47 Phạm Văn Đồng",
+    "lat": 21.048852,
+    "lng": 105.779970
+  },
+  {
+    "agent": 2,
+    "unitType": 2007,
+    "unitName": "Phòng Y tế cơ quan BCA 40 Hàng Bài",
+    "lat": 21.022267,
+    "lng": 105.852430
+  },
+  {
+    "agent": 2,
+    "unitType": 2007,
+    "unitName": "Phòng Y tế cơ quan BCA 44 Yết Kiêu",
+    "lat": 21.020171,
+    "lng": 105.842627
+  }
+]

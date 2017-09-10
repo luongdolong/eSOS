@@ -4,11 +4,27 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.xyz.automate.esos.R;
+import com.xyz.automate.esos.object.MedicalAgent;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 /**
  * Created by LuongDoLong on 8/9/2017.
@@ -17,6 +33,7 @@ import java.text.SimpleDateFormat;
 public class CommonUtils {
     // Sharedpref file name
     private static final String PREF_NAME = "AutomateTrackingPref";
+    private static ArrayList<MedicalAgent> fixMedicalAgents;
 
     /**
      * put data in SharedPreferences
@@ -209,5 +226,59 @@ public class CommonUtils {
                 bm, 0, 0, width, height, matrix, false);
         bm.recycle();
         return resizedBitmap;
+    }
+
+    public static float meterDistanceBetweenPoints(double startLat, double startLng, double endLat, double endLng) {
+        Location locationA = new Location("point A");
+
+        locationA.setLatitude(startLat);
+        locationA.setLongitude(startLng);
+
+        Location locationB = new Location("point B");
+
+        locationB.setLatitude(endLat);
+        locationB.setLongitude(endLng);
+
+        float distance = locationA.distanceTo(locationB);
+        return distance;
+    }
+
+    public static MedicalAgent findHospital(ArrayList<MedicalAgent> medicalAgents, int agent, int type) {
+        if (medicalAgents == null || medicalAgents.isEmpty()) {
+            return null;
+        }
+        for (MedicalAgent e : medicalAgents) {
+            if (e.getAgent() == agent && e.getUnitType() == type) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    public static ArrayList<MedicalAgent> getFixHospital(Context context) {
+        if (fixMedicalAgents != null) {
+            return fixMedicalAgents;
+        }
+        InputStream is = context.getResources().openRawResource(R.raw.hospital);
+        Writer writer = new StringWriter();
+        char[] buffer = new char[1024];
+        try {
+            Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            int n;
+            while ((n = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, n);
+            }
+            String jsonString = writer.toString();
+            fixMedicalAgents = new Gson().fromJson(jsonString, new TypeToken<ArrayList<MedicalAgent>>(){}.getType());
+        }  catch (Exception ex) {
+            Log.d("ESOS", ex.toString());
+        } finally {
+            try {
+                is.close();
+            } catch (Exception ex) {
+                Log.d("ESOS", ex.toString());
+            }
+        }
+        return fixMedicalAgents;
     }
 }

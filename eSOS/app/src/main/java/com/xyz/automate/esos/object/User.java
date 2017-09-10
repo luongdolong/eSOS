@@ -1,14 +1,13 @@
 package com.xyz.automate.esos.object;
 
-import com.xyz.automate.esos.common.Constants;
-
 /**
  * Created by LuongDoLong on 9/4/2017.
  */
 
 public class User {
     private String userId;
-    private Constants.UserType type;
+    private int agent;
+    private int type;
     private String unitName;
     private String userName;
     private String phoneNumber;
@@ -17,7 +16,7 @@ public class User {
     private int status; // 0: offline, 1: online
     private boolean me;
     private int sos;    // 0: normal,  1: call sos
-    private String sostime;
+    private String sostime; //yyyyMMddHHmmss
     private String lastupdate;
 
     public String getUserId() {
@@ -28,11 +27,19 @@ public class User {
         this.userId = userId;
     }
 
-    public Constants.UserType getType() {
+    public int getAgent() {
+        return agent;
+    }
+
+    public void setAgent(int agent) {
+        this.agent = agent;
+    }
+
+    public int getType() {
         return type;
     }
 
-    public void setType(Constants.UserType type) {
+    public void setType(int type) {
         this.type = type;
     }
 
@@ -100,16 +107,16 @@ public class User {
         this.sos = sos;
     }
 
-    public String getLastupdate() {
-        return lastupdate;
-    }
-
     public String getSostime() {
         return sostime;
     }
 
     public void setSostime(String sostime) {
         this.sostime = sostime;
+    }
+
+    public String getLastupdate() {
+        return lastupdate;
     }
 
     public void setLastupdate(String lastupdate) {

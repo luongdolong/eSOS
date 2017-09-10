@@ -5,13 +5,14 @@
     <string name="facebook_app_id">166469800577225</string>
     <string name="google_api_key_map" templateMergeStrategy="preserve" translatable="false">AIzaSyCDXypI_nPLkn2WvMsIy8_8cVc4_oPZjmw</string>
     <!--<string name="default_web_client_id">990930663955-ufd10h7ic4b2fpjv0sc1h0svv1aqnkd1.apps.googleusercontent.com</string>-->
-    <string name="coordination_center">Trung tâm điều phối cấp cứu BV 198</string>
-    <string name="health_establishment">Cơ sở y tế</string>
+    <!--<string name="coordination_center">Trung tâm điều phối cấp cứu BV 198</string>-->
+    <!--<string name="health_establishment">Cơ sở y tế</string>-->
+    <string name="other_medical">Cơ sở y tế khác</string>
     <string name="emergency_group">Tổ cấp cứu lưu động</string>
-    <string name="traffic_police">Cảnh sát Giao thông</string>
+    <string name="traffic_police">Cảnh sát (Giao thông, 114, Cơ động)</string>
     <string name="end_user">Người dùng thông thường</string>
-    <string name="lat_location_198_hospital">21.033533</string>
-    <string name="lon_location_198_hospital">105.777932</string>
+    <!--<string name="lat_location_198_hospital">21.033533</string>-->
+    <!--<string name="lon_location_198_hospital">105.777932</string>-->
     <string name="info_msg_001">Bạn có muốn đăng xuất?</string>
     <string name="info_msg_002">Có %d người đang online</string>
     <string name="info_msg_003">Bạn có chắc chắn muốn gọi cấp cứu?</string>

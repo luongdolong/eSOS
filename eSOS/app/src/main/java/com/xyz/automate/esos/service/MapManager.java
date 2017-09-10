@@ -6,9 +6,11 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -26,14 +28,25 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.xyz.automate.esos.ESoSApplication;
 import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.activity.HomeActivity;
+import com.xyz.automate.esos.activity.LoginActivity;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.object.GroupUser;
+import com.xyz.automate.esos.object.MedicalAgent;
 import com.xyz.automate.esos.object.User;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +62,8 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
     private HomeActivity mContext;
     private EoSLocationListener myLocationListener;
     private Location mCurrentLocation;
-    private Constants.UserType userType;
+    private int agent;
+    private int userType;
     private int sos = Constants.OFF_SOS;
     private List<GroupUser> users = new ArrayList<>();
     private List<ValueAnimator> valueAnimators = new ArrayList<>();
@@ -60,27 +74,8 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         mLocationMgr = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         mContext = context;
         myLocationListener = new EoSLocationListener();
-        int type = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
-        switch (type) {
-            case 0:
-                userType = Constants.UserType.CoordinationCenter;
-                break;
-            case 1:
-                userType = Constants.UserType.HealthEstablishment;
-                break;
-            case 2:
-                userType = Constants.UserType.EmergencyGroup;
-                break;
-            case 3:
-                userType = Constants.UserType.TrafficPolice;
-                break;
-            case 4:
-                userType = Constants.UserType.EndUser;
-                break;
-            default:
-                userType = Constants.UserType.EndUser;
-                break;
-        }
+        userType = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
+        agent = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY);
     }
 
     public boolean initMap() {
@@ -154,35 +149,31 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(camera));
     }
 
-    public void zoom(float v) {
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(v), 2000, null);
-    }
-
     private Marker addMarkerDefault(GroupUser group, boolean makeMove) {
         if (group.users == null && group.users.isEmpty()) {
             return null;
         }
-        Constants.UserType type = group.getTypeGroup();
+        int agentGroup = group.getAgentGroup();
         MarkerOptions mark = new MarkerOptions();
-        mark.title(group.getTitleGroup(mContext));
+        mark.title(group.getTitleGroup());
         mark.snippet(group.getSnippetGroup(mContext));
         mark.visible(true);
         mark.position(group.getLocationGroup());
         mark.draggable(false);
 
-        if (Constants.UserType.CoordinationCenter == type) {
+        if (Constants.CENTER_HOSPITAL == agentGroup) {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_hospital_center), 40, 40)));
-        } else if (Constants.UserType.HealthEstablishment == type) {
+        } else if (Constants.LOCAL_HOSPITAL == agentGroup) {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_medical_bag), 40, 40)));
-        } else if (Constants.UserType.EmergencyGroup == type) {
+        } else if (Constants.MOBILE_MEDICAL == agentGroup) {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_ambulance), 40, 40)));
-        } else if (Constants.UserType.TrafficPolice == type) {
+        } else if (Constants.POLICEMAN == agentGroup) {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_policeman), 40, 40)));
-        } else if (Constants.UserType.EndUser == type){
+        } else if (Constants.END_USER == agentGroup){
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
             if (Constants.ON_SOS == group.users.get(0).getSos()) {
@@ -235,37 +226,75 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         user.setMe(true);
         user.setStatus(Constants.ONLINE);
         user.setSos(sos);
+        user.setAgent(agent);
         user.setType(userType);
         user.setUserId(ESoSApplication.getInstance().uDiD());
         user.setUserName(CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY));
         user.setPhoneNumber(CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY));
-        if (Constants.UserType.CoordinationCenter == userType) {
-            user.setLat(Double.parseDouble(mContext.getString(R.string.lat_location_198_hospital)));
-            user.setLng(Double.parseDouble(mContext.getString(R.string.lon_location_198_hospital)));
-            user.setUnitName(mContext.getString(R.string.coordination_center));
-        } else if (Constants.UserType.HealthEstablishment == userType) {
-            user.setLat(mCurrentLocation.getLatitude());
-            user.setLng(mCurrentLocation.getLongitude());
-            user.setUnitName(mContext.getString(R.string.health_establishment));
-        } else if (Constants.UserType.EmergencyGroup == userType) {
-            user.setLat(mCurrentLocation.getLatitude());
-            user.setLng(mCurrentLocation.getLongitude());
-            user.setUnitName(mContext.getString(R.string.emergency_group));
-        } else if (Constants.UserType.TrafficPolice == userType) {
-            user.setLat(mCurrentLocation.getLatitude());
-            user.setLng(mCurrentLocation.getLongitude());
-            user.setUnitName(mContext.getString(R.string.traffic_police));
+        MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(mContext), agent, userType);
+        if (medicalAgent != null) {
+            user.setLat(medicalAgent.getLat());
+            user.setLng(medicalAgent.getLng());
+            user.setUnitName(medicalAgent.getUnitName());
         } else {
             user.setLat(mCurrentLocation.getLatitude());
             user.setLng(mCurrentLocation.getLongitude());
-            user.setUnitName(mContext.getString(R.string.end_user));
+            if (Constants.MOBILE_MEDICAL == agent) {
+                user.setUnitName(mContext.getString(R.string.emergency_group));
+            } else if (Constants.POLICEMAN == agent) {
+                user.setUnitName(mContext.getString(R.string.traffic_police));
+            } else {
+                user.setUnitName(mContext.getString(R.string.end_user));
+            }
         }
+
         group.users.add(user);
         addMarkerDefault(group, false);
     }
 
     private void addLocation(GroupUser groupUser) {
         addMarkerDefault(groupUser, false);
+    }
+
+    /**
+     * A method to download json data from url
+     */
+    private String downloadUrl(String strUrl) throws IOException {
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try {
+            URL url = new URL(strUrl);
+
+            // Creating an http connection to communicate with url
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            data = sb.toString();
+            Log.d("downloadUrl", data.toString());
+            br.close();
+
+        } catch (Exception e) {
+            Log.d("Exception", e.toString());
+        } finally {
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
     }
 
     public void resetMap() {
@@ -286,6 +315,54 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             }
             addLocation(groupUser);
         }
+        drawDirection();
+    }
+
+    public void updatePartner(List<GroupUser> mapLocationList, boolean reset) {
+        users.clear();
+        users.addAll(mapLocationList);
+        if (reset) {
+            resetMap();
+        }
+    }
+
+    public void zoom(float v) {
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(v), 2000, null);
+    }
+
+    private String getUrl(LatLng origin, LatLng dest) {
+        // Origin of route
+        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+        // Destination of route
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+
+        // Sensor enabled
+        String sensor = "sensor=false";
+
+        // Building the parameters to the web service
+        String parameters = str_origin + "&" + str_dest + "&" + sensor;
+
+        // Output format
+        String output = "json";
+
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters;
+
+        return url;
+    }
+
+    public void  drawDirection() {
+        //TODO
+        MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(mContext), agent, userType);
+        LatLng origin = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+        LatLng dest = new LatLng(medicalAgent.getLat(), medicalAgent.getLng());
+        // Getting URL to the Google Directions API
+        String url = getUrl(origin, dest);
+        Log.d("onMapClick", url.toString());
+        FetchUrl FetchUrl = new FetchUrl();
+
+        // Start downloading json data from Google Directions API
+        FetchUrl.execute(url);
     }
 
     private class EoSLocationListener implements LocationListener {
@@ -321,6 +398,109 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         public void onStatusChanged(String provider,
                                     int status, Bundle extras) {
             Log.v(TAG, "onStatusChanged: " + provider + ", " + status);
+        }
+    }
+
+    // Fetches data from url passed
+    private class FetchUrl extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try {
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+                Log.d("Background Task data", data.toString());
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+
+        }
+    }
+
+    /**
+     * A class to parse the Google Places in JSON format
+     */
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                Log.d("ParserTask",jsonData[0].toString());
+                DataParser parser = new DataParser();
+                Log.d("ParserTask", parser.toString());
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+                Log.d("ParserTask","Executing routes");
+                Log.d("ParserTask",routes.toString());
+
+            } catch (Exception e) {
+                Log.d("ParserTask",e.toString());
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        // Executes in UI thread, after the parsing process
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points;
+            PolylineOptions lineOptions = null;
+
+            // Traversing through all the routes
+            for (int i = 0; i < result.size(); i++) {
+                points = new ArrayList<>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(10);
+                lineOptions.color(Color.RED);
+
+                Log.d("onPostExecute","onPostExecute lineoptions decoded");
+            }
+            // Drawing polyline in the Google Map for the i-th route
+            if(lineOptions != null) {
+                mMap.addPolyline(lineOptions);
+            }
+            else {
+                Log.d("onPostExecute","without Polylines drawn");
+            }
         }
     }
 }

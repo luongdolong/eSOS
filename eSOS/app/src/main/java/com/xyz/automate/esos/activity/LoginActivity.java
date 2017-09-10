@@ -1,9 +1,11 @@
 package com.xyz.automate.esos.activity;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -24,8 +26,6 @@ import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
-import android.Manifest;
-
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -43,14 +43,22 @@ import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.xyz.automate.esos.ESoSApplication;
 import com.xyz.automate.esos.R;
 import com.xyz.automate.esos.adapter.SpinnerTypeUserAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.custom.ProgressInfDialog;
-import com.xyz.automate.esos.object.UserTypeData;
+import com.xyz.automate.esos.object.MedicalAgent;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 
 /**
@@ -58,8 +66,6 @@ import java.util.ArrayList;
  */
 
 public class LoginActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
-    private static final int RC_SIGN_IN = 9001;
-
     private EditText edPhoneNumber;
     private EditText edFullname;
     private Spinner objectTypeSpinner;
@@ -74,7 +80,8 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     private FirebaseAuth mAuth;
     // [END declare_auth]
 
-    private ArrayList<UserTypeData> listUserType;
+    private ArrayList<MedicalAgent> listMedicalUser = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,8 +139,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN) {
+           if (requestCode == Constants.RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             if (result.isSuccess()) {
                 // Google Sign In was successful, authenticate with Firebase
@@ -159,21 +165,6 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         edFullname.setText(CommonUtils.getPrefString(this, Constants.USER_NAME_KEY));
         edPhoneNumber.setText(CommonUtils.getPrefString(this, Constants.PHONE_NUMBER_KEY));
 
-        listUserType = new ArrayList<>();
-        listUserType.add(new UserTypeData(Constants.UserType.CoordinationCenter, getString(R.string.coordination_center)));
-        listUserType.add(new UserTypeData(Constants.UserType.HealthEstablishment, getString(R.string.health_establishment)));
-        listUserType.add(new UserTypeData(Constants.UserType.EmergencyGroup, getString(R.string.emergency_group)));
-        listUserType.add(new UserTypeData(Constants.UserType.TrafficPolice, getString(R.string.traffic_police)));
-        listUserType.add(new UserTypeData(Constants.UserType.EndUser, getString(R.string.end_user)));
-        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listUserType);
-        objectTypeSpinner.setAdapter(adapter);
-        for(int i = 0; i < listUserType.size(); i++) {
-            if (CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY) == listUserType.get(i).getTypeUser().ordinal()) {
-                objectTypeSpinner.setSelection(i);
-                break;
-            }
-        }
-
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
@@ -192,7 +183,7 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                     return;
                 }
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-                startActivityForResult(signInIntent, RC_SIGN_IN);
+                startActivityForResult(signInIntent, Constants.RC_SIGN_IN);
             }
         });
 
@@ -220,6 +211,47 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                 showMessage("Đăng nhập thất bại!!!");
             }
         });
+        mProgressBar.show();
+        new LoadMedicalAgentTask(this).execute();
+    }
+
+    private void initUsertype() {
+
+        listMedicalUser.clear();
+        listMedicalUser.addAll(CommonUtils.getFixHospital(this));
+        MedicalAgent agent = new MedicalAgent();
+        agent.setAgent(Constants.LOCAL_HOSPITAL);
+        agent.setUnitType(Constants.UNIT_TYPE_OTHER_HOSPITAL);
+        agent.setUnitName(getString(R.string.other_medical));
+        listMedicalUser.add(agent);
+
+        agent = new MedicalAgent();
+        agent.setAgent(Constants.MOBILE_MEDICAL);
+        agent.setUnitType(Constants.UNIT_TYPE_MOBILE_MEDICAL);
+        agent.setUnitName(getString(R.string.emergency_group));
+        listMedicalUser.add(agent);
+
+        agent = new MedicalAgent();
+        agent.setAgent(Constants.POLICEMAN);
+        agent.setUnitType(Constants.UNIT_TYPE_POLICEMAN);
+        agent.setUnitName(getString(R.string.traffic_police));
+        listMedicalUser.add(agent);
+
+        agent = new MedicalAgent();
+        agent.setAgent(Constants.END_USER);
+        agent.setUnitType(Constants.UNIT_TYPE_END_USER);
+        agent.setUnitName(getString(R.string.end_user));
+        listMedicalUser.add(agent);
+
+        SpinnerTypeUserAdapter adapter = new SpinnerTypeUserAdapter(this, R.layout.layout_spinner_type_user, R.id.txtSpnNameTypeUser, listMedicalUser);
+        objectTypeSpinner.setAdapter(adapter);
+        for(int i = 0; i < listMedicalUser.size(); i++) {
+            if (CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY) == listMedicalUser.get(i).getUnitType() &&
+                    CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY) == listMedicalUser.get(i).getAgent()) {
+                objectTypeSpinner.setSelection(i);
+                break;
+            }
+        }
     }
 
     private void loadUserInfo() {
@@ -307,7 +339,8 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     private void signInSuccessfull() {
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.PHONE_NUMBER_KEY, edPhoneNumber.getText());
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_NAME_KEY, edFullname.getText());
-        CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY, listUserType.get(objectTypeSpinner.getSelectedItemPosition()).getTypeUser().ordinal());
+        CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY, listMedicalUser.get(objectTypeSpinner.getSelectedItemPosition()).getUnitType());
+        CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY, listMedicalUser.get(objectTypeSpinner.getSelectedItemPosition()).getAgent());
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
         finish();
@@ -337,5 +370,23 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
                     }
                 });
         alertDialog.show();
+    }
+
+    private class LoadMedicalAgentTask extends AsyncTask<Void, Void, Void> {
+        private Context mContext;
+
+        public LoadMedicalAgentTask(Context context) {
+            mContext = context;
+        }
+
+        protected Void doInBackground(Void...params) {
+            CommonUtils.getFixHospital(mContext);
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            initUsertype();
+            mProgressBar.dismiss();
+        }
     }
 }
