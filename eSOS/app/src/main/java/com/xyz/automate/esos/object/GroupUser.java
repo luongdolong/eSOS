@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.xyz.automate.esos.R;
+import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
 
 import java.util.ArrayList;
@@ -30,15 +31,26 @@ public class GroupUser {
         return users.get(0).getAgent();
     }
 
-    public String getTitleGroup() {
+    public String getTitleGroup(Context context) {
         if (users.isEmpty()) {
             return "";
         }
-        String title;
+        String title = "";
         if (Constants.END_USER == getAgentGroup()) {
             title = users.get(0).getUserName();
-        } else {
-            title = users.get(0).getUnitName();
+        } else if (Constants.LOCAL_HOSPITAL == getAgentGroup()){
+            MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(context), users.get(0).getAgent(), users.get(0).getType());
+            if (medicalAgent != null && users.size() == 1) {
+                title = medicalAgent.getUnitName();
+            } else if (users.size() != 1) {
+                title = context.getString(R.string.health_establishment);
+            }
+        } else if (Constants.MOBILE_MEDICAL == getAgentGroup()) {
+            title = context.getString(R.string.emergency_group);
+        } else if (Constants.POLICEMAN == getAgentGroup()) {
+            title = context.getString(R.string.traffic_police);
+        } else if (Constants.CENTER_HOSPITAL == getAgentGroup()) {
+            title = context.getString(R.string.coordination_center);
         }
         return title;
     }

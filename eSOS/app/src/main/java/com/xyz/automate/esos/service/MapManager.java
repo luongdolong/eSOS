@@ -156,7 +156,7 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         }
         int agentGroup = group.getAgentGroup();
         MarkerOptions mark = new MarkerOptions();
-        mark.title(group.getTitleGroup());
+        mark.title(group.getTitleGroup(mContext));
         mark.snippet(group.getSnippetGroup(mContext));
         mark.visible(true);
         mark.position(group.getLocationGroup());

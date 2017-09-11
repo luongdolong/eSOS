@@ -27,7 +27,7 @@ public class DateUtils {
         Calendar now = Calendar.getInstance();
         Calendar cal = Calendar.getInstance();
         cal.setTime(d);
-        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.add(Calendar.HOUR_OF_DAY, hour);
 
         return !now.before(cal);
     }
