@@ -214,7 +214,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         if (requestCode == Constants.RC_ALLOW_GPS) {
             initMap();
-            mapManager.updatePartner(listMapLoc, true);
+            mapManager.updatePartner(listMapLoc, destination, true);
         } else if (requestCode == Constants.RC_ALLOW_CALL) {
             actionCall(currentCall);
         }
@@ -238,7 +238,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             if (isSoSing) {
                 callPhone(groupUser.users.get(0).getPhoneNumber());
             } else {
-                //TODO action setup sos
+                connectSoS(groupUser.users.get(0));
             }
 
         } else {
@@ -303,6 +303,21 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").setValue(Constants.OFFLINE);
+                        if (isSoSing) {
+                            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sos").setValue(Constants.OFF_SOS);
+                            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue("");
+                            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sostime").setValue("");
+
+                            if (destination != null) {
+                                mDatabase.child("users").child(destination.getUserId()).child("objective").setValue("");
+                                mDatabase.child("users").child(destination.getUserId()).child("sos").setValue(Constants.OFF_SOS);
+                                mDatabase.child("users").child(destination.getUserId()).child("lastupdate").setValue(CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss"));
+                            }
+                            isSoSing = false;
+                            objective = null;
+                            destination = null;
+                        }
+                        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss"));
                         FirebaseAuth.getInstance().signOut();
                         if (CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.SIGNIN_METHOD_KEY) == Constants.SignIn.FACEBOOK.ordinal()) {
                             LoginManager.getInstance().logOut();
@@ -351,7 +366,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
-                            //TODO action cancel sos
+                            cancelSoS();
                             return;
                         }
                         if (isSoSing) {
@@ -359,13 +374,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                             centerImageSoS.setVisibility(View.GONE);
                             rippleBackground.stopRippleAnimation();
                             fab.setImageResource(R.drawable.ic_call48);
-                            //TODO action cancel sos
+                            cancelSoS();
                         } else {
                             isSoSing = true;
                             centerImageSoS.setVisibility(View.VISIBLE);
                             rippleBackground.startRippleAnimation();
                             fab.setImageResource(R.drawable.ic_cancel48);
-                            //TODO action call sos
+                            setupSoS(null);
                         }
                     }
                 })
@@ -462,7 +477,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 }
                 determineDestination(mapUser);
                 if (mapManager != null) {
-                    mapManager.updatePartner(listUser, true);
+                    mapManager.updatePartner(listUser, destination, true);
                 } else {
                     listMapLoc.clear();
                     listMapLoc.addAll(listUser);
@@ -549,7 +564,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void determineDestination(Map<String, List<User>> mapUser) {
-        destination = null;
+        boolean first = false;
+        if (destination == null) {
+            first = true;
+        } else {
+            destination = null;
+        }
         if (!isSoSing || CommonUtils.isEmpty(objective) || mapUser == null) {
             return;
         }
@@ -570,6 +590,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     break;
                 }
             }
+            if (destination != null) {
+                centerImageSoS.setVisibility(View.GONE);
+                rippleBackground.stopRippleAnimation();
+            }
+            if (first) {
+                new AlertDialog.Builder(this)
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setTitle("Thông báo")
+                        .setMessage(String.format(getString(R.string.info_msg_006)))
+                        .setPositiveButton("OK", null)
+                        .show();
+            }
         } else if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
             if (mapUser.get(Constants.END_USER) == null) {
                 return;
@@ -581,6 +613,58 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 }
             }
         }
+    }
+
+    private void setupSoS(User user) {
+        isSoSing = true;
+        String now = CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss");
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sos").setValue(Constants.ON_SOS);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sostime").setValue(now);
+        if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue(user.getUserId());
+            mDatabase.child("users").child(user.getUserId()).child("objective").setValue(ESoSApplication.getInstance().uDiD());
+            fab.show();
+            fab.setImageResource(R.drawable.ic_cancel48);
+        }
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
+        mapManager.updatePartner(listMapLoc, destination, true);
+    }
+
+    private void cancelSoS() {
+        String now = CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss");
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sos").setValue(Constants.OFF_SOS);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue("");
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sostime").setValue("");
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
+        if (destination != null) {
+            mDatabase.child("users").child(destination.getUserId()).child("objective").setValue("");
+            mDatabase.child("users").child(destination.getUserId()).child("sos").setValue(Constants.OFF_SOS);
+            mDatabase.child("users").child(destination.getUserId()).child("lastupdate").setValue(now);
+        }
+        isSoSing = false;
+        objective = null;
+        destination = null;
+        if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+            fab.hide();
+            fab.setImageResource(R.drawable.ic_cancel48);
+        }
+        mapManager.updatePartner(listMapLoc, destination, true);
+    }
+
+    private void connectSoS(final User user) {
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Xác nhận")
+                .setMessage(String.format(getString(R.string.info_msg_005), user.getUserName()))
+                .setPositiveButton("Có", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setupSoS(user);
+                        actionCall(user.getPhoneNumber());
+                    }
+                })
+                .setNegativeButton("Không", null)
+                .show();
     }
 
     private void exitHome() {
@@ -672,5 +756,4 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             Toast.makeText(getApplicationContext(), "Error in your phone call "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
-
 }

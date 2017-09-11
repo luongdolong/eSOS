@@ -67,7 +67,8 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
     private int sos = Constants.OFF_SOS;
     private List<GroupUser> users = new ArrayList<>();
     private List<ValueAnimator> valueAnimators = new ArrayList<>();
-    private Map<String, GroupUser> mapUser = new HashMap<String, GroupUser>();
+    private Map<String, GroupUser> mapUser = new HashMap<>();
+    private User destination;
 
     public MapManager(GoogleMap map, HomeActivity context) {
         mMap = map;
@@ -318,9 +319,14 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         drawDirection();
     }
 
-    public void updatePartner(List<GroupUser> mapLocationList, boolean reset) {
+    public void updatePartner(List<GroupUser> mapLocationList, User destination, boolean reset) {
         users.clear();
         users.addAll(mapLocationList);
+        if (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent || Constants.END_USER == agent) {
+            this.destination = destination;
+        } else {
+            this.destination = null;
+        }
         if (reset) {
             resetMap();
         }
@@ -351,11 +357,13 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         return url;
     }
 
-    public void  drawDirection() {
-        //TODO
-        MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(mContext), agent, userType);
+    private void  drawDirection() {
+        if (destination == null) {
+            return;
+        }
+        //MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(mContext), agent, userType);
         LatLng origin = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-        LatLng dest = new LatLng(medicalAgent.getLat(), medicalAgent.getLng());
+        LatLng dest = new LatLng(destination.getLat(), destination.getLng());
         // Getting URL to the Google Directions API
         String url = getUrl(origin, dest);
         Log.d("onMapClick", url.toString());

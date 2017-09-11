@@ -14,7 +14,9 @@
     <!--<string name="lat_location_198_hospital">21.033533</string>-->
     <!--<string name="lon_location_198_hospital">105.777932</string>-->
     <string name="info_msg_001">Bạn có muốn đăng xuất?</string>
-    <string name="info_msg_002">Có %d người đang online</string>
+    <string name="info_msg_002">Có %d người đang trực tuyến</string>
     <string name="info_msg_003">Bạn có chắc chắn muốn gọi cấp cứu?</string>
     <string name="info_msg_004">Bạn có chắc chắn muốn hủy cấp cứu?</string>
+    <string name="info_msg_005">Người dùng: %s đang cần gọi cấp cứu, bạn có chác chắn muốn đến?</string>
+    <string name="info_msg_006">Lực lượng cấp cứu đang tới</string>
 </resources>
