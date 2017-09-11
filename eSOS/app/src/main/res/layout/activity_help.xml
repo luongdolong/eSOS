@@ -60,6 +60,8 @@
                 android:textColor="#000"
                 android:textSize="9pt"
                 android:paddingTop="10dp"
+                android:paddingRight="5dp"
+                android:paddingLeft="5dp"
                 android:lineSpacingExtra="5pt"
                 android:text="  1. Tác nhân Trung tâm cấp cứu BV 198: là trung tâm điều hành hệ thống cấp cứu điện tử co nhiệm vụ tiếp nhận các tình huống cấp cứu và điều phối các nguồn lực cũng như hoạt động của các nguồn lực dựa trên nền tảng bản đồ số của Google.\n
         Trung tâm có thể sử dụng hệ thống bản đồ số để theo dõi vị trí các nguồn lực theo thời gian thực.\n
