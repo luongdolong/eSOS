@@ -25,7 +25,7 @@ public class MenuContactAdapter extends ArrayAdapter<User> {
     }
 
     private ArrayList<User> dataSet;
-    Context mContext;
+    private Context mContext;
 
     public MenuContactAdapter(ArrayList<User> data, Context context) {
         super(context, R.layout.row_item_contact, data);

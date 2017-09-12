@@ -37,4 +37,9 @@ public class Constants {
 
     public final static String SIGNIN_METHOD_KEY = "SigninMethod";
     public final static String USER_NAME_DEFAULT = "";
+
+    public final static int CALL_OUT = 1;
+    public final static int CALL_IN = 0;
+    public final static int CALL_SOS = 1;
+    public final static int CALL_TEL = 2;
 }

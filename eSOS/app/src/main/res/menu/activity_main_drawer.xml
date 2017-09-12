@@ -6,6 +6,10 @@
             android:id="@+id/nav_setting"
             android:icon="@drawable/ic_setting_black"
             android:title="Thiết lập"/>
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@drawable/ic_history_black"
+            android:title="Lịch sử"/>
     </group>
 
     <item android:title="Ứng dụng">

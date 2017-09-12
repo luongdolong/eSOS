@@ -18,6 +18,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.telecom.Call;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,6 +49,8 @@ import com.xyz.automate.esos.adapter.MenuContactAdapter;
 import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.common.DateUtils;
+import com.xyz.automate.esos.logic.DataManager;
+import com.xyz.automate.esos.logic.model.CallDataModel;
 import com.xyz.automate.esos.object.GroupUser;
 import com.xyz.automate.esos.object.MedicalAgent;
 import com.xyz.automate.esos.object.User;
@@ -77,7 +80,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private boolean isMapInitSuccess = false;
     private int agent;
     private int userType;
-    private String currentCall = "";
+    private User currentCalling;
     private DatabaseReference mDatabase;
     private MapManager mapManager;
     private boolean isSoSing;
@@ -184,6 +187,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_setting) {
             Intent intent = new Intent(this, SettingActivity.class);
             startActivityForResult(intent, Constants.RC_SETTING_SCREEN);
+        } else if (id == R.id.nav_history) {
         } else if (id == R.id.nav_help) {
             Intent intent = new Intent(this, HelpActivity.class);
             startActivity(intent);
@@ -216,7 +220,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             initMap();
             mapManager.updatePartner(listMapLoc, destination, true);
         } else if (requestCode == Constants.RC_ALLOW_CALL) {
-            actionCall(currentCall);
+            actionCall(currentCalling);
         }
     }
 
@@ -236,14 +240,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     public void actionChooseLocation(final GroupUser groupUser) {
         if (Constants.END_USER == groupUser.getAgentGroup() && (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent)) {
             if (isSoSing) {
-                callPhone(groupUser.users.get(0).getPhoneNumber());
+                callPhone(groupUser.users.get(0));
             } else {
                 connectSoS(groupUser.users.get(0));
             }
 
         } else {
             if (groupUser.users.size() == 1 &&  !ESoSApplication.getInstance().uDiD().equals(groupUser.users.get(0).getUserId())) {
-                callPhone(groupUser.users.get(0).getPhoneNumber());
+                callPhone(groupUser.users.get(0));
             } else {
                 makeListCall(groupUser);
             }
@@ -624,6 +628,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             mDatabase.child("users").child(user.getUserId()).child("objective").setValue(ESoSApplication.getInstance().uDiD());
             fab.show();
             fab.setImageResource(R.drawable.ic_cancel48);
+        } else {
+            //update call history
+            updateCallLog(Constants.CALL_SOS, null);
         }
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
         mapManager.updatePartner(listMapLoc, destination, true);
@@ -659,7 +666,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         setupSoS(user);
-                        actionCall(user.getPhoneNumber());
+                        actionCall(user);
                     }
                 })
                 .setNegativeButton("Không", null)
@@ -689,7 +696,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (users.isEmpty()) {
             return;
         } else if (users.size() == 1) {
-            callPhone(users.get(0).getPhoneNumber());
+            callPhone(users.get(0));
             return;
         }
         // custom dialog
@@ -703,30 +710,30 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 dialog.dismiss();
-                callPhone(users.get(position).getPhoneNumber());
+                callPhone(users.get(position));
             }
         });
         dialog.setCancelable(true);
         dialog.show();
     }
 
-    private void callPhone(final String phone) {
-        currentCall = phone;
+    private void callPhone(final User receiver) {
+        currentCalling = receiver;
         new AlertDialog.Builder(this)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("Xác nhận")
-                .setMessage(String.format("Bạn muốn gọi tới số: %s", phone))
+                .setMessage(String.format("Bạn muốn gọi tới số: %s", receiver.getPhoneNumber()))
                 .setPositiveButton("Gọí", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        actionCall(phone);
+                        actionCall(receiver);
                     }
                 })
                 .setNegativeButton("Không", null)
                 .show();
     }
 
-    private void actionCall(String mobileNo) {
+    private void actionCall(User receiver) {
         boolean allow = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (getApplicationContext().checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
@@ -749,14 +756,30 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
 
         try {
-            String uri = "tel:" + mobileNo.trim();
+            String uri = "tel:" + receiver.getPhoneNumber().trim();
             Intent intent = new Intent(Intent.ACTION_CALL);
             intent.setData(Uri.parse(uri));
+            updateCallLog(Constants.CALL_TEL, receiver);
             this.startActivity(intent);
         } catch (SecurityException ex) {
             Toast.makeText(getApplicationContext(), "Error in your phone call "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), "Error in your phone call "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void updateCallLog(int kind, User user) {
+        CallDataModel model = new CallDataModel();
+        model.type = Constants.CALL_OUT;
+        model.kind = kind;
+        model.sender = ESoSApplication.getInstance().uDiD();
+        if (Constants.CALL_SOS != kind && user != null){
+            model.agent = user.getAgent();
+            model.unitName = user.getUnitName();
+            model.userName = user.getUserName();
+            model.tel = user.getPhoneNumber();
+        }
+        model.time = Calendar.getInstance().getTime();
+        DataManager.getInstance().insertCallData(model);
     }
 }

@@ -12,6 +12,7 @@ import android.util.Log;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.xyz.automate.esos.R;
+import com.xyz.automate.esos.common.CommonUtils;
 import com.xyz.automate.esos.custom.ProgressInfDialog;
 
 public class SplashScreenActivity extends AppCompatActivity {
@@ -51,6 +52,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                 mAuth = FirebaseAuth.getInstance();
                 user = mAuth.getCurrentUser();
                 // [END initialize_auth]
+                CommonUtils.getFixHospital(mContext);
             } catch (Exception ex) {
                 Log.d("ESOS", ex.getMessage());
             }
