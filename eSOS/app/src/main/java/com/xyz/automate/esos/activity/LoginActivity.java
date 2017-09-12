@@ -53,12 +53,6 @@ import com.xyz.automate.esos.common.Constants;
 import com.xyz.automate.esos.custom.ProgressInfDialog;
 import com.xyz.automate.esos.object.MedicalAgent;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 
 /**
@@ -81,7 +75,6 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
     // [END declare_auth]
 
     private ArrayList<MedicalAgent> listMedicalUser = new ArrayList<>();
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

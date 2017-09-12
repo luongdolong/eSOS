@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/imgTypeCall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
@@ -55,6 +55,7 @@
         android:text="19001001"
         android:textColor="@android:color/black" />
     <RelativeLayout
+        android:id="@+id/rlUnit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="30dp"
@@ -66,6 +67,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_alignParentRight="true"
+            android:layout_marginBottom="5dp"
             android:src="@mipmap/ic_ambulance"/>
         <TextView
             android:id="@+id/tvCallUnitName"
@@ -74,9 +76,15 @@
             android:layout_toLeftOf="@id/logoCallReceiver"
             android:layout_marginRight="5dp"
             android:layout_centerVertical="true"
+            android:textAlignment="textEnd"
             android:textStyle="italic"
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Lực lượng cấp cứu 115"/>
     </RelativeLayout>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@+id/rlUnit"
+        android:background="#d3d3d3"/>
 </RelativeLayout>

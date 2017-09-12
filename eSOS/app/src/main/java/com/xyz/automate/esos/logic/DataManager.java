@@ -7,6 +7,7 @@ import com.activeandroid.query.Select;
 import com.xyz.automate.esos.common.DateUtils;
 import com.xyz.automate.esos.logic.model.CallDataModel;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -39,12 +40,12 @@ public class DataManager {
         model.save();
     }
 
-    public List<CallDataModel> getCallData(String id) {
+    public ArrayList<CallDataModel> getCallData(String id) {
         List<CallDataModel> resultSet = new Select().from(CallDataModel.class)
                 .where("sender = ?", id)
                 .orderBy("time DESC")
                 .execute();
-        return resultSet;
+        return new ArrayList<>(resultSet);
     }
 
     public void deleteCallDataExpire() {

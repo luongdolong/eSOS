@@ -25,7 +25,7 @@ public class DateUtils {
 
     public static String convertDateCallLog(Date d) {
         String result;
-        SimpleDateFormat mySimpleDateFormat = new SimpleDateFormat("HH:mm:ss WEEK Ngày dd/MM/yyyy");
+        SimpleDateFormat mySimpleDateFormat = new SimpleDateFormat("HH:mm:ss - dd/MM/yyyy");
         result = mySimpleDateFormat.format(d);
         String week = "";
         Calendar cal = Calendar.getInstance();
@@ -56,7 +56,7 @@ public class DateUtils {
             default:
                 break;
         }
-        return result.replace("WEEK", week + ",");
+        return result.replace("-", week + ",  Ngày");
     }
 
     public static Date addDate(Date fromDate, int day) {

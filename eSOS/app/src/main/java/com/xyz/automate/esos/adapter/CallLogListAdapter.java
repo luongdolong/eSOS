@@ -75,18 +75,22 @@ public class CallLogListAdapter extends ArrayAdapter<CallDataModel> {
             }
             viewHolder.tvCallName.setText(dataModel.userName);
             viewHolder.tvCallTel.setText(dataModel.tel);
-            viewHolder.tvCallUnitName.setText(dataModel.unitName);
             viewHolder.logoCallReceiver.setVisibility(View.VISIBLE);
             if (Constants.CENTER_HOSPITAL == dataModel.agent) {
                 viewHolder.logoCallReceiver.setImageResource(R.mipmap.ic_hospital_center);
+                viewHolder.tvCallUnitName.setText(dataModel.unitName);
             } else if (Constants.LOCAL_HOSPITAL == dataModel.agent) {
                 viewHolder.logoCallReceiver.setImageResource(R.mipmap.ic_medical_bag);
+                viewHolder.tvCallUnitName.setText(dataModel.unitName);
             } else if (Constants.MOBILE_MEDICAL == dataModel.agent) {
                 viewHolder.logoCallReceiver.setImageResource(R.mipmap.ic_ambulance);
+                viewHolder.tvCallUnitName.setText(mContext.getString(R.string.emergency_group));
             } else if (Constants.POLICEMAN == dataModel.agent) {
                 viewHolder.logoCallReceiver.setImageResource(R.mipmap.ic_policeman);
+                viewHolder.tvCallUnitName.setText(mContext.getString(R.string.traffic_police));
             } else if (Constants.END_USER == dataModel.agent) {
                 viewHolder.logoCallReceiver.setImageResource(R.mipmap.ic_user_avatar);
+                viewHolder.tvCallUnitName.setText(mContext.getString(R.string.end_user));
             }
         }
 

@@ -188,6 +188,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             Intent intent = new Intent(this, SettingActivity.class);
             startActivityForResult(intent, Constants.RC_SETTING_SCREEN);
         } else if (id == R.id.nav_history) {
+            Intent intent = new Intent(this, CallLogActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_help) {
             Intent intent = new Intent(this, HelpActivity.class);
             startActivity(intent);
