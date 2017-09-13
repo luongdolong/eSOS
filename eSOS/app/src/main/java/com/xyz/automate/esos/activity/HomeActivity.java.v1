@@ -23,9 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -77,13 +75,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private RippleBackground rippleBackground;
     private ImageView centerImageSoS;
     private FloatingActionButton fab;
-    private LinearLayout llCoordinator;
-    private TextView tvCoordinatorUserForce;
-    private TextView tvCoordinatorUserVictim;
-    private ImageView imgLogoUserForce;
-    private Button btCoordinatorOK;
-    private Button btCoordinatorCancel;
-
     private Intent serviceBg;
     private boolean isMapInitSuccess = false;
     private int agent;
@@ -94,9 +85,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private boolean isSoSing;
     private String objective;
     private User destination;
-    private User userVictim;
-    private User userForce;
-    private boolean inSelection;
     private List<GroupUser> listMapLoc = new ArrayList<>();
 
     @Override
@@ -116,12 +104,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         rippleBackground = (RippleBackground) findViewById(R.id.rippleSoS);
         centerImageSoS = (ImageView) findViewById(R.id.centerImageSoS);
         fab = (FloatingActionButton) findViewById(R.id.fab);
-        llCoordinator = (LinearLayout)findViewById(R.id.llCoordinator);
-        tvCoordinatorUserForce = (TextView)findViewById(R.id.tvCoordinatorUserForce);
-        tvCoordinatorUserVictim = (TextView)findViewById(R.id.tvCoordinatorUserVictim);
-        imgLogoUserForce = (ImageView) findViewById(R.id.imgLogoUserForce);
-        btCoordinatorOK = (Button)findViewById(R.id.btCoordinatorOK);
-        btCoordinatorCancel = (Button)findViewById(R.id.btCoordinatorCancel);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -132,7 +114,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         isSoSing = false;
         destination = null;
-        inSelection = false;
         FirebaseApp.initializeApp(getApplicationContext());
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").onDisconnect().setValue(Constants.OFFLINE);
@@ -258,38 +239,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void actionChooseLocation(final GroupUser groupUser) {
-        if (Constants.CENTER_HOSPITAL == agent) {
-            if (groupUser.users.size() > 1) {
-                makeListCall(groupUser);
-                return;
-            }
-            int agentGroup = groupUser.getAgentGroup();
-            if (inSelection) {
-                if ((userVictim != null && userForce != null) || !canCoordinate(groupUser)) {
-                    return;
-                }
-                if (userVictim != null && userForce == null && CommonUtils.isEmpty(groupUser.users.get(0).getObjective()) &&
-                        (Constants.POLICEMAN == agentGroup || Constants.MOBILE_MEDICAL == agentGroup)) {
-                    userForce = groupUser.users.get(0);
-                    setupDisplayCoordinator();
-                }
-                if (userForce != null && userVictim == null && Constants.END_USER == agentGroup
-                        && CommonUtils.isEmpty(groupUser.users.get(0).getObjective()) && Constants.ON_SOS == groupUser.users.get(0).getSos() ) {
-                    userVictim = groupUser.users.get(0);
-                    setupDisplayCoordinator();
-                }
-            } else {
-                if (!canCoordinate(groupUser)) {
-                    callPhone(groupUser.users.get(0));
-                    return;
-                }
-                if (Constants.END_USER == agentGroup && Constants.ON_SOS == groupUser.users.get(0).getSos() &&
-                        CommonUtils.isEmpty(groupUser.users.get(0).getObjective())) {
-                    chooseActionCallOrSoS(groupUser.users.get(0));
-                    return;
-                }
+        if (Constants.END_USER == groupUser.getAgentGroup() && (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent)) {
+            if (isSoSing) {
                 callPhone(groupUser.users.get(0));
+            } else {
+                connectSoS(groupUser.users.get(0));
             }
+
         } else {
             if (groupUser.users.size() == 1 &&  !ESoSApplication.getInstance().uDiD().equals(groupUser.users.get(0).getUserId())) {
                 callPhone(groupUser.users.get(0));
@@ -297,45 +253,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 makeListCall(groupUser);
             }
         }
-    }
-
-    private void chooseActionCallOrSoS(final User user) {
-        new AlertDialog.Builder(this)
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setTitle("Xác nhận")
-                .setMessage(String.format("Bạn muốn gọi tới số: %s hay chỉ định nạn nhân cấp cứu", user.getPhoneNumber()))
-                .setPositiveButton("Gọí", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        actionCall(user);
-                    }
-                })
-                .setNegativeButton("Cấp cứu", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        int agentGroup = user.getAgent();
-                        if (userForce == null && Constants.POLICEMAN == agentGroup || Constants.MOBILE_MEDICAL == agentGroup) {
-                            inSelection = true;
-                            userForce = user;
-                            setupDisplayCoordinator();
-                        }
-                        if (userVictim == null && Constants.END_USER == agentGroup
-                                && CommonUtils.isEmpty(user.getObjective()) && Constants.ON_SOS == user.getSos() ) {
-                            inSelection = true;
-                            userVictim = user;
-                            setupDisplayCoordinator();
-                        }
-                    }
-                })
-                .show();
-    }
-
-    private boolean canCoordinate(GroupUser g) {
-        int agentGroup = g.getAgentGroup();
-        if (Constants.END_USER == agentGroup || Constants.MOBILE_MEDICAL == agentGroup || Constants.POLICEMAN == agentGroup) {
-            return true;
-        }
-        return false;
     }
 
     private void displayUserInfo() {
@@ -418,83 +335,30 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupControl() {
-        if (Constants.CENTER_HOSPITAL == agent) {
-            fab.setVisibility(View.GONE);
-            llCoordinator.setVisibility(inSelection ? View.VISIBLE : View.INVISIBLE);
-        } else if (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent) {
-            if (isSoSing) {
-                fab.show();
-            } else {
-                fab.hide();
-            }
-            fab.setImageResource(R.drawable.ic_cancel48);
-            llCoordinator.setVisibility(View.GONE);
-        } else if (Constants.LOCAL_HOSPITAL == agent) {
+        if (Constants.LOCAL_HOSPITAL == agent || Constants.CENTER_HOSPITAL == agent) {
             fab.hide();
-            llCoordinator.setVisibility(View.GONE);
         } else {
             fab.show();
-            llCoordinator.setVisibility(View.GONE);
-        }
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (Constants.END_USER == agent) {
-                    actionEmergency();
-                } else if (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent) {
-                    completeEmergency();
+            if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+                if (!isSoSing) {
+                    fab.hide();
                 }
+                fab.setImageResource(R.drawable.ic_cancel48);
             }
-        });
-        btCoordinatorOK.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                connectSoS();
-            }
-        });
-        btCoordinatorCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                inSelection = false;
-                userForce = null;
-                userVictim = null;
-                setupDisplayCoordinator();
-            }
-        });
-    }
-
-    private void setupDisplayCoordinator() {
-        if (userForce == null && userVictim == null) {
-            tvCoordinatorUserForce.setText("");
-            tvCoordinatorUserVictim.setText("");
-            llCoordinator.setVisibility(View.GONE);
-            return;
-        }
-        String unitName = "";
-        llCoordinator.setVisibility(View.VISIBLE);
-        if (userForce  == null) {
-            tvCoordinatorUserForce.setText("Lực lượng cấp cứu:");
-        } else {
-            if (Constants.MOBILE_MEDICAL == userForce.getAgent()) {
-                unitName = getString(R.string.emergency_group);
-                imgLogoUserForce.setImageResource(R.mipmap.ic_ambulance);
-            } else if (Constants.POLICEMAN == userForce.getAgent()) {
-                unitName = getString(R.string.traffic_police);
-                imgLogoUserForce.setImageResource(R.mipmap.ic_policeman);
-            }
-            userForce.setUnitName(unitName);
-            tvCoordinatorUserForce.setText(String.format("Lực lượng cấp cứu:\n %s (%s)", unitName, userForce.getUserName()));
-        }
-        if (userVictim  == null) {
-            tvCoordinatorUserVictim.setText("Nạn nhân:");
-        } else {
-            tvCoordinatorUserVictim.setText(String.format("Nạn nhân:\n %s", userVictim.getUserName()));
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    actionEmergency();
+                }
+            });
         }
     }
 
     private void actionEmergency() {
         String title;
-        if (isSoSing) {
+        if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+            title = getString(R.string.info_msg_004);
+        }   else if (isSoSing) {
             title = getString(R.string.info_msg_004);
         } else {
             title = getString(R.string.info_msg_003);
@@ -506,6 +370,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 .setPositiveButton("Có", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+                            cancelSoS();
+                            return;
+                        }
                         if (isSoSing) {
                             isSoSing = false;
                             centerImageSoS.setVisibility(View.GONE);
@@ -517,48 +385,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                             centerImageSoS.setVisibility(View.VISIBLE);
                             rippleBackground.startRippleAnimation();
                             fab.setImageResource(R.drawable.ic_cancel48);
-                            setupSoS();
+                            setupSoS(null);
                         }
                     }
                 })
                 .setNegativeButton("Không", null)
-                .show();
-    }
-
-    private void completeEmergency() {
-        new AlertDialog.Builder(this)
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .setTitle("Xác nhận")
-                .setMessage(getString(R.string.info_msg_008))
-                .setPositiveButton("Hủy", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (destination != null) {
-                            mDatabase.child("users").child(destination.getUserId()).child("objective").setValue("");
-                        }
-                        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue("");
-                        isSoSing = false;
-                        objective = null;
-                        destination = null;
-                        fab.hide();
-                        mapManager.updatePartner(listMapLoc, destination, true);
-                    }
-                })
-                .setNegativeButton("Hoàn thành", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (destination != null) {
-                            mDatabase.child("users").child(destination.getUserId()).child("sos").setValue(Constants.OFF_SOS);
-                            mDatabase.child("users").child(destination.getUserId()).child("objective").setValue("");
-                        }
-                        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue("");
-                        isSoSing = false;
-                        objective = null;
-                        destination = null;
-                        fab.hide();
-                        mapManager.updatePartner(listMapLoc, destination, true);
-                    }
-                })
                 .show();
     }
 
@@ -624,23 +455,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                         continue;
                     }
                     if (Constants.END_USER == agent) {
-                        if (Constants.CENTER_HOSPITAL == user.getAgent() || user.getUserId().equals(objective)) {
+                        if (agent != user.getAgent()) {
                             addUser2Set(mapUser, user);
                         }
-                    } else if (Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent){
-                        if (Constants.END_USER != user.getAgent() || user.getUserId().equals(objective)) {
+                    } else {
+                        if (endUserSoS(user)) {
                             addUser2Set(mapUser, user);
-                        } else if (endUserSoS(user) && ESoSApplication.getInstance().uDiD().equals(user.getObjective())) {
-                            addUser2Set(mapUser, user);
-                        }
-                    } else if (Constants.CENTER_HOSPITAL == agent){
-                        if (agent != user.getAgent() && Constants.END_USER != user.getAgent()) {
-                            addUser2Set(mapUser, user);
-                        } else if (endUserSoS(user)) {
-                            addUser2Set(mapUser, user);
-                        }
-                    } else if (Constants.LOCAL_HOSPITAL == agent) {
-                        if (Constants.END_USER != user.getAgent() && userType != user.getType()) {
+                        } else if (agent != user.getAgent() && Constants.END_USER != user.getAgent()) {
                             addUser2Set(mapUser, user);
                         }
                     }
@@ -729,7 +550,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private boolean isExistTarget(User user) {
-        if (Constants.END_USER == agent && !isSoSing) {
+        if (!isSoSing) {
             return false;
         }
         if (Constants.END_USER == agent &&
@@ -739,7 +560,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
         }
         if ((Constants.MOBILE_MEDICAL == agent || Constants.POLICEMAN == agent) && Constants.END_USER == user.getAgent()) {
-            if (!CommonUtils.isEmpty(user.getObjective()) && user.getSos() == Constants.ON_SOS) {
+            if (!CommonUtils.isEmpty(user.getObjective())) {
                 return true;
             }
         }
@@ -753,13 +574,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         } else {
             destination = null;
         }
-        if ((!isSoSing && Constants.END_USER == agent) || CommonUtils.isEmpty(objective) || mapUser == null) {
+        if (!isSoSing || CommonUtils.isEmpty(objective) || mapUser == null) {
             return;
         }
         if (Constants.END_USER != agent && Constants.POLICEMAN != agent && Constants.MOBILE_MEDICAL != agent) {
             return;
         }
-        String msg = "";
         if (Constants.END_USER == agent) {
             ArrayList<User> listUser = new ArrayList<>();
             if (mapUser.get(String.valueOf(Constants.MOBILE_MEDICAL)) != null) {
@@ -778,9 +598,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 centerImageSoS.setVisibility(View.GONE);
                 rippleBackground.stopRippleAnimation();
             }
-            if (first && destination != null) {
-                setupSoS();
-                msg = String.format(getString(R.string.info_msg_006));
+            if (first) {
+                new AlertDialog.Builder(this)
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setTitle("Thông báo")
+                        .setMessage(String.format(getString(R.string.info_msg_006)))
+                        .setPositiveButton("OK", null)
+                        .show();
             }
         } else if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
             if (mapUser.get(String.valueOf(Constants.END_USER)) == null) {
@@ -792,33 +616,24 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     break;
                 }
             }
-            if (first && destination != null) {
-                setupSoS();
-                msg = String.format(getString(R.string.info_msg_007), destination.getUserName());
-            }
-        }
-        if (!CommonUtils.isEmpty(msg)) {
-            new AlertDialog.Builder(this)
-                    .setIcon(android.R.drawable.ic_dialog_info)
-                    .setTitle("Thông báo")
-                    .setMessage(msg)
-                    .setPositiveButton("OK", null)
-                    .show();
         }
     }
 
-    private void setupSoS() {
+    private void setupSoS(User user) {
         isSoSing = true;
+        String now = CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss");
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sos").setValue(Constants.ON_SOS);
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sostime").setValue(now);
         if (Constants.POLICEMAN == agent || Constants.MOBILE_MEDICAL == agent) {
+            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("objective").setValue(user.getUserId());
+            mDatabase.child("users").child(user.getUserId()).child("objective").setValue(ESoSApplication.getInstance().uDiD());
             fab.show();
             fab.setImageResource(R.drawable.ic_cancel48);
-        } else if (Constants.END_USER == agent) {
-            String now = CommonUtils.date2str(Calendar.getInstance().getTime(), "yyyyMMddHHmmss");
-            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sos").setValue(Constants.ON_SOS);
-            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("sostime").setValue(now);
-            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
+        } else {
+            //update call history
             updateCallLog(Constants.CALL_SOS, null);
         }
+        mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
         mapManager.updatePartner(listMapLoc, destination, true);
     }
 
@@ -830,6 +645,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("lastupdate").setValue(now);
         if (destination != null) {
             mDatabase.child("users").child(destination.getUserId()).child("objective").setValue("");
+            //mDatabase.child("users").child(destination.getUserId()).child("sos").setValue(Constants.OFF_SOS);
             mDatabase.child("users").child(destination.getUserId()).child("lastupdate").setValue(now);
         }
         isSoSing = false;
@@ -842,25 +658,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         mapManager.updatePartner(listMapLoc, destination, true);
     }
 
-    private void connectSoS() {
-        if (userForce == null || userVictim == null) {
-            return;
-        }
-        String title = getString(R.string.info_msg_005);
-        title = String.format(title, userForce.getUnitName(), userForce.getUserName(), userVictim.getUserName());
+    private void connectSoS(final User user) {
         new AlertDialog.Builder(this)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("Xác nhận")
-                .setMessage(title)
+                .setMessage(String.format(getString(R.string.info_msg_005), user.getUserName()))
                 .setPositiveButton("Có", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        mDatabase.child("users").child(userForce.getUserId()).child("objective").setValue(userVictim.getUserId());
-                        mDatabase.child("users").child(userVictim.getUserId()).child("objective").setValue(userForce.getUserId());
-                        userForce = null;
-                        userVictim = null;
-                        inSelection = false;
-                        llCoordinator.setVisibility(View.INVISIBLE);
+                        setupSoS(user);
+                        actionCall(user);
                     }
                 })
                 .setNegativeButton("Không", null)
@@ -976,5 +783,4 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         model.time = Calendar.getInstance().getTime();
         DataManager.getInstance().insertCallData(model);
     }
-
 }

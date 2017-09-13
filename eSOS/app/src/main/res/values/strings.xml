@@ -17,6 +17,8 @@
     <string name="info_msg_002">Có %d người đang trực tuyến</string>
     <string name="info_msg_003">Bạn có chắc chắn muốn gọi cấp cứu?</string>
     <string name="info_msg_004">Bạn có chắc chắn muốn hủy cấp cứu?</string>
-    <string name="info_msg_005">Người dùng: %s đang cần gọi cấp cứu, bạn có chác chắn muốn đến?</string>
+    <string name="info_msg_005" formatted="false">Bạn có chắc chắn muốn điều %s (%s) đến cấp cứu cho nạn nhân %s</string>
     <string name="info_msg_006">Lực lượng cấp cứu đang tới</string>
+    <string name="info_msg_007">Có một nạn nhận (%s) đang cần cấp cứu gấp</string>
+    <string name="info_msg_008">Bạn có chắc chắn muốn hủy cấp cứu hay đã hoàn thành cấp cứu?</string>
 </resources>
