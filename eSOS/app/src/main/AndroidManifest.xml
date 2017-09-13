@@ -70,6 +70,10 @@
             android:name=".activity.CallLogActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name=".activity.RegimenActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
         <meta-data android:name="AA_DB_NAME" android:value="ESOS.db" />
         <meta-data android:name="AA_DB_VERSION" android:value="1" />
         <meta-data
