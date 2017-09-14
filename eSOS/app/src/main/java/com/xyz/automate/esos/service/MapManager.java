@@ -178,29 +178,8 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
             if (Constants.ON_SOS == group.users.get(0).getSos() && !group.users.get(0).isMe()) {
-                final Circle circle = mMap.addCircle(new CircleOptions()
-                        .center(group.getLocationGroup())
-                        .radius(1000)
-                        .strokeWidth(2)
-                        .strokeColor(0xffff0000)
-                        .fillColor(CommonUtils.isEmpty(group.users.get(0).getObjective()) ? 0x44ff0000 : 0x44009900));
-
-                ValueAnimator valueAnimator = new ValueAnimator();
-                valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-                valueAnimator.setRepeatMode(ValueAnimator.RESTART);
-                valueAnimator.setIntValues(0, 1000);
-                valueAnimator.setDuration(6000);
-                valueAnimator.setEvaluator(new IntEvaluator());
-                valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-                valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                        float animatedFraction = valueAnimator.getAnimatedFraction();
-                        circle.setRadius(animatedFraction * 1000 * 2);
-                    }
-                });
-                valueAnimator.start();
-                valueAnimators.add(valueAnimator);
+                buildWaveBlink(group, false);
+                buildWaveBlink(group, true);
             }
         } else {
             mark.icon(BitmapDescriptorFactory.defaultMarker());
@@ -211,6 +190,64 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             move(group.getLocationGroup(), null);
         }
         return marker;
+    }
+
+    private void buildWaveBlink(GroupUser group, boolean blink) {
+        if (blink) {
+            final Circle circle = mMap.addCircle(new CircleOptions()
+                    .center(group.getLocationGroup())
+                    .radius(100)
+                    .strokeWidth(1)
+                    .strokeColor(Color.YELLOW)
+                    .fillColor(Color.YELLOW));
+
+            ValueAnimator valueAnimator = new ValueAnimator();
+            valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+            valueAnimator.setIntValues(0, 1);
+            valueAnimator.setDuration(2000);
+            valueAnimator.setEvaluator(new IntEvaluator());
+            valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+            valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    float animatedFraction = valueAnimator.getAnimatedFraction();
+                    if (animatedFraction > 0.5) {
+                        circle.setStrokeColor(Color.GREEN);
+                        circle.setFillColor(Color.GREEN);
+                    } else {
+                        circle.setStrokeColor(Color.YELLOW);
+                        circle.setFillColor(Color.YELLOW);
+                    }
+                }
+            });
+            valueAnimator.start();
+            valueAnimators.add(valueAnimator);
+        } else {
+            final Circle circle = mMap.addCircle(new CircleOptions()
+                    .center(group.getLocationGroup())
+                    .radius(1000)
+                    .strokeWidth(2)
+                    .strokeColor(0xffff0000)
+                    .fillColor(CommonUtils.isEmpty(group.users.get(0).getObjective()) ? 0x44ff0000 : 0x44009900));
+
+            ValueAnimator valueAnimator = new ValueAnimator();
+            valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+            valueAnimator.setIntValues(0, 1000);
+            valueAnimator.setDuration(6000);
+            valueAnimator.setEvaluator(new IntEvaluator());
+            valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+            valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    float animatedFraction = valueAnimator.getAnimatedFraction();
+                    circle.setRadius(animatedFraction * 1000 * 2);
+                }
+            });
+            valueAnimator.start();
+            valueAnimators.add(valueAnimator);
+        }
     }
 
     public void updateUserLocation() {
@@ -385,8 +422,8 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             mCurrentLocation = location;
             Log.v(TAG, "Latitude: " + location.getLatitude() + "/Longitude: " + location.getLongitude());
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 10);
+            //CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 10);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
             mMap.animateCamera(cameraUpdate);
             mContext.updateLocation(latLng);
             resetMap();

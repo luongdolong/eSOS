@@ -107,7 +107,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
 
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("e-SoS");
+        getSupportActionBar().setTitle(getString(R.string.app_name));
         View header = navigationView.getHeaderView(0);
         tvUnitname = (TextView) header.findViewById(R.id.tvHeaderUnitname);
         tvFullname = (TextView) header.findViewById(R.id.tvHeaderFullname);
