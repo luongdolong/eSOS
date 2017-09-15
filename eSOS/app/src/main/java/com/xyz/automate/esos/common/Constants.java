@@ -34,6 +34,8 @@ public class Constants {
     public final static String USER_NAME_KEY = "UserName";
     public final static String USER_AGENT_KEY = "UserAgent";
     public final static String USER_TYPE_KEY = "UserType";
+    public final static String USER_HEALTH_INSURANCE_KEY = "UserHealthInsurance";
+
 
     public final static String SIGNIN_METHOD_KEY = "SigninMethod";
     public final static String USER_NAME_DEFAULT = "";

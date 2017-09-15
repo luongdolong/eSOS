@@ -59,9 +59,13 @@ public class GroupUser {
         if (users.isEmpty()) {
             return "";
         }
-        String snippet;
+        String snippet = "";
         if (Constants.END_USER == getAgentGroup()) {
-            snippet = users.get(0).getPhoneNumber();
+            if (!CommonUtils.isEmpty(users.get(0).getHealthInsuranceNo())) {
+                snippet = String.format("Thẻ BHYT: %s\nSố điện thoại: %s", users.get(0).getHealthInsuranceNo(), users.get(0).getPhoneNumber());
+            } else {
+                snippet = users.get(0).getPhoneNumber();
+            }
         } else {
             if (users.size() == 1) {
                 snippet = String.format("%s (%s)", users.get(0).getUserName(), users.get(0).getPhoneNumber());

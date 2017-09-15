@@ -369,7 +369,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 avatar.setImageResource(R.mipmap.ic_policeman);
                 break;
             case Constants.END_USER:
-                this.tvUnitname.setText(getString(R.string.end_user));
+                tvUnitname.setText(CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_NAME_KEY));
+                String insuranceNo = CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_HEALTH_INSURANCE_KEY);
+                this.tvFullname.setText(String.format("Thẻ BHYT: %s", insuranceNo));
                 avatar.setImageResource(R.mipmap.ic_user_avatar);
                 break;
             default:
@@ -387,6 +389,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("type").setValue(userType);
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("agent").setValue(agent);
         mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("status").setValue(Constants.ONLINE);
+        if (Constants.END_USER == agent) {
+            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("healthInsuranceNo").setValue(
+                    CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_HEALTH_INSURANCE_KEY));
+        } else {
+            mDatabase.child("users").child(ESoSApplication.getInstance().uDiD()).child("healthInsuranceNo").setValue("");
+        }
     }
 
     private void actionLogout() {

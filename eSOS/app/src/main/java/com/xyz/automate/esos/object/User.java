@@ -11,6 +11,7 @@ public class User {
     private String unitName;
     private String userName;
     private String phoneNumber;
+    private String healthInsuranceNo;
     private double lng;
     private double lat;
     private int status; // 0: offline, 1: online
@@ -66,6 +67,14 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getHealthInsuranceNo() {
+        return healthInsuranceNo;
+    }
+
+    public void setHealthInsuranceNo(String healthInsuranceNo) {
+        this.healthInsuranceNo = healthInsuranceNo;
     }
 
     public double getLng() {

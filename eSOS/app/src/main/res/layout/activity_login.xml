@@ -51,6 +51,29 @@
             android:inputType="text"
             />
         <TextView
+            android:id="@+id/tvInsuranceNo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dp"
+            android:textColor="#fff"
+            android:text="Số thẻ BHYT"
+            android:visibility="gone"
+            />
+        <EditText
+            android:id="@+id/edInsuranceNo"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="0dp"
+            android:layout_gravity="center"
+            android:textColor="#fff"
+            android:imeOptions="actionDone"
+            android:maxLength="25"
+            android:maxLines="1"
+            android:inputType="textCapCharacters|text"
+            android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+            android:visibility="gone"
+            />
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="5dp"

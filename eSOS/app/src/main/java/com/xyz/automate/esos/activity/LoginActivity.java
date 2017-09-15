@@ -15,9 +15,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethod;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -63,6 +66,8 @@ import java.util.ArrayList;
 public class LoginActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
     private EditText edPhoneNumber;
     private EditText edFullname;
+    private TextView tvInsuranceNo;
+    private EditText edInsuranceNo;
     private Spinner objectTypeSpinner;
     private SignInButton googleSignIn;
     private LoginButton facebookSignIn;
@@ -87,6 +92,8 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         edFullname = (EditText)findViewById(R.id.edFullname);
         googleSignIn = (SignInButton)findViewById(R.id.google_button);
         facebookSignIn = (LoginButton) findViewById(R.id.loginFBbutton);
+        tvInsuranceNo = (TextView) findViewById(R.id.tvInsuranceNo);
+        edInsuranceNo = (EditText) findViewById(R.id.edInsuranceNo);
         mAuth = FirebaseAuth.getInstance();
 
         initControl();
@@ -243,13 +250,40 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
             if (CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY) == listMedicalUser.get(i).getUnitType() &&
                     CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY) == listMedicalUser.get(i).getAgent()) {
                 objectTypeSpinner.setSelection(i);
+                if (Constants.END_USER == listMedicalUser.get(i).getAgent()) {
+                    tvInsuranceNo.setVisibility(View.VISIBLE);
+                    edInsuranceNo.setVisibility(View.VISIBLE);
+                    String insuranceNo = CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_HEALTH_INSURANCE_KEY);
+                    if (CommonUtils.isEmpty(edInsuranceNo.getText().toString())) {
+                        edInsuranceNo.setText(insuranceNo);
+                    }
+                    edFullname.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+                    edInsuranceNo.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                } else {
+                    tvInsuranceNo.setVisibility(View.GONE);
+                    edInsuranceNo.setVisibility(View.GONE);
+                    edFullname.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                }
                 break;
             }
         }
         objectTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                
+                if (Constants.END_USER == listMedicalUser.get(position).getAgent()) {
+                    tvInsuranceNo.setVisibility(View.VISIBLE);
+                    edInsuranceNo.setVisibility(View.VISIBLE);
+                    String insuranceNo = CommonUtils.getPrefString(ESoSApplication.getInstance(), Constants.USER_HEALTH_INSURANCE_KEY);
+                    if (CommonUtils.isEmpty(edInsuranceNo.getText().toString())) {
+                        edInsuranceNo.setText(insuranceNo);
+                    }
+                    edFullname.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+                    edInsuranceNo.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                } else {
+                    tvInsuranceNo.setVisibility(View.GONE);
+                    edInsuranceNo.setVisibility(View.GONE);
+                    edFullname.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                }
             }
 
             @Override
@@ -346,6 +380,9 @@ public class LoginActivity extends AppCompatActivity implements GoogleApiClient.
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_NAME_KEY, edFullname.getText());
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY, listMedicalUser.get(objectTypeSpinner.getSelectedItemPosition()).getUnitType());
         CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY, listMedicalUser.get(objectTypeSpinner.getSelectedItemPosition()).getAgent());
+        if (Constants.END_USER == listMedicalUser.get(objectTypeSpinner.getSelectedItemPosition()).getAgent()) {
+            CommonUtils.putPref(ESoSApplication.getInstance(), Constants.USER_HEALTH_INSURANCE_KEY, edInsuranceNo.getText());
+        }
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
         finish();

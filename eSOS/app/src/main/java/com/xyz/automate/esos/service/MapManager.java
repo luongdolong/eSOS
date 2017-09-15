@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -15,7 +16,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -77,6 +82,33 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         myLocationListener = new EoSLocationListener();
         userType = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_TYPE_KEY);
         agent = CommonUtils.getPrefInteger(ESoSApplication.getInstance(), Constants.USER_AGENT_KEY);
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(Marker marker) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                LinearLayout info = new LinearLayout(mContext);
+                info.setOrientation(LinearLayout.VERTICAL);
+
+                TextView title = new TextView(mContext);
+                title.setTextColor(Color.BLACK);
+                title.setGravity(Gravity.CENTER);
+                title.setTypeface(null, Typeface.BOLD);
+                title.setText(marker.getTitle());
+
+                TextView snippet = new TextView(mContext);
+                snippet.setTextColor(Color.GRAY);
+                snippet.setText(marker.getSnippet());
+
+                info.addView(title);
+                info.addView(snippet);
+
+                return info;
+            }
+        });
     }
 
     public boolean initMap() {
@@ -178,8 +210,7 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             mark.icon(BitmapDescriptorFactory.fromBitmap(CommonUtils.getResizedBitmap(
                     BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_user_avatar), 40, 40)));
             if (Constants.ON_SOS == group.users.get(0).getSos() && !group.users.get(0).isMe()) {
-                buildWaveBlink(group, false);
-                buildWaveBlink(group, true);
+                buildWaveBlink(group);
             }
         } else {
             mark.icon(BitmapDescriptorFactory.defaultMarker());
@@ -192,62 +223,43 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         return marker;
     }
 
-    private void buildWaveBlink(GroupUser group, boolean blink) {
-        if (blink) {
-            final Circle circle = mMap.addCircle(new CircleOptions()
-                    .center(group.getLocationGroup())
-                    .radius(100)
-                    .strokeWidth(1)
-                    .strokeColor(Color.YELLOW)
-                    .fillColor(Color.YELLOW));
+    private void buildWaveBlink(GroupUser group) {
+        final Circle circle1 = mMap.addCircle(new CircleOptions()
+                .center(group.getLocationGroup())
+                .radius(1000)
+                .strokeWidth(2)
+                .strokeColor(0xffff0000)
+                .fillColor(CommonUtils.isEmpty(group.users.get(0).getObjective()) ? 0x44ff0000 : 0x44009900));
+        final Circle circle2 = mMap.addCircle(new CircleOptions()
+                .center(group.getLocationGroup())
+                .radius(100)
+                .strokeWidth(1)
+                .strokeColor(Color.YELLOW)
+                .fillColor(Color.YELLOW));
 
-            ValueAnimator valueAnimator = new ValueAnimator();
-            valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            valueAnimator.setRepeatMode(ValueAnimator.RESTART);
-            valueAnimator.setIntValues(0, 1);
-            valueAnimator.setDuration(2000);
-            valueAnimator.setEvaluator(new IntEvaluator());
-            valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-            valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    float animatedFraction = valueAnimator.getAnimatedFraction();
-                    if (animatedFraction > 0.5) {
-                        circle.setStrokeColor(Color.GREEN);
-                        circle.setFillColor(Color.GREEN);
-                    } else {
-                        circle.setStrokeColor(Color.YELLOW);
-                        circle.setFillColor(Color.YELLOW);
-                    }
+        ValueAnimator valueAnimator = new ValueAnimator();
+        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+        valueAnimator.setIntValues(0, 1000);
+        valueAnimator.setDuration(6000);
+        valueAnimator.setEvaluator(new IntEvaluator());
+        valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                float animatedFraction = valueAnimator.getAnimatedFraction();
+                circle1.setRadius(animatedFraction * 1000 * 2);
+                if (animatedFraction * 1000 > 500) {
+                    circle2.setStrokeColor(Color.GREEN);
+                    circle2.setFillColor(Color.GREEN);
+                } else {
+                    circle2.setStrokeColor(Color.YELLOW);
+                    circle2.setFillColor(Color.YELLOW);
                 }
-            });
-            valueAnimator.start();
-            valueAnimators.add(valueAnimator);
-        } else {
-            final Circle circle = mMap.addCircle(new CircleOptions()
-                    .center(group.getLocationGroup())
-                    .radius(1000)
-                    .strokeWidth(2)
-                    .strokeColor(0xffff0000)
-                    .fillColor(CommonUtils.isEmpty(group.users.get(0).getObjective()) ? 0x44ff0000 : 0x44009900));
-
-            ValueAnimator valueAnimator = new ValueAnimator();
-            valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            valueAnimator.setRepeatMode(ValueAnimator.RESTART);
-            valueAnimator.setIntValues(0, 1000);
-            valueAnimator.setDuration(6000);
-            valueAnimator.setEvaluator(new IntEvaluator());
-            valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-            valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                    float animatedFraction = valueAnimator.getAnimatedFraction();
-                    circle.setRadius(animatedFraction * 1000 * 2);
-                }
-            });
-            valueAnimator.start();
-            valueAnimators.add(valueAnimator);
-        }
+            }
+        });
+        valueAnimator.start();
+        valueAnimators.add(valueAnimator);
     }
 
     public void updateUserLocation() {
@@ -269,6 +281,7 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
         user.setUserId(ESoSApplication.getInstance().uDiD());
         user.setUserName(CommonUtils.getPrefString(mContext, Constants.USER_NAME_KEY));
         user.setPhoneNumber(CommonUtils.getPrefString(mContext, Constants.PHONE_NUMBER_KEY));
+        user.setHealthInsuranceNo(CommonUtils.getPrefString(mContext, Constants.USER_HEALTH_INSURANCE_KEY));
         MedicalAgent medicalAgent = CommonUtils.findHospital(CommonUtils.getFixHospital(mContext), agent, userType);
         if (medicalAgent != null) {
             user.setLat(medicalAgent.getLat());
@@ -412,6 +425,7 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
 
     private class EoSLocationListener implements LocationListener {
         private static final String TAG = "MY_LOCATION_LISTENER";
+        private boolean isFirst = true;
 
         @Override
         public void onLocationChanged(Location location) {
@@ -422,8 +436,13 @@ public class MapManager implements GoogleMap.OnInfoWindowClickListener {
             mCurrentLocation = location;
             Log.v(TAG, "Latitude: " + location.getLatitude() + "/Longitude: " + location.getLongitude());
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            //CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 10);
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
+            CameraUpdate cameraUpdate;
+            if (!isFirst) {
+                cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
+            } else {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 10);
+                isFirst = false;
+            }
             mMap.animateCamera(cameraUpdate);
             mContext.updateLocation(latLng);
             resetMap();
