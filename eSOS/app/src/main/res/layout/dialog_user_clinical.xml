@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/footer"
+        android:fillViewport="true" >
+
+        <TextView
+            android:id="@+id/tvClinical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="" />
+    </ScrollView>
+    <LinearLayout
+        android:id="@+id/footer"
+        android:layout_width="fill_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
+        android:weightSum="2">
+
+
+        <Button
+            android:id="@+id/btUserClinicalCall"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:background="@color/com_facebook_button_background_color"
+            android:textColor="#fff"
+            android:text="Gọi"/>
+        <Button
+            android:id="@+id/btUserClinicalCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_margin="10dp"
+            android:background="@color/com_facebook_button_background_color"            android:textColor="#fff"
+            android:text="Đóng"/>
+    </LinearLayout>
+
+    </RelativeLayout>

@@ -58,6 +58,12 @@ import com.xyz.automate.esos.object.User;
 import com.xyz.automate.esos.service.LocationService;
 import com.xyz.automate.esos.service.MapManager;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -265,6 +271,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void actionChooseLocation(final GroupUser groupUser) {
+        if (Constants.END_USER == groupUser.getAgentGroup()) {
+            makeEndUserAction(groupUser);
+            return;
+        }
         if (Constants.CENTER_HOSPITAL == agent) {
             if (groupUser.users.size() > 1) {
                 makeListCall(groupUser);
@@ -304,6 +314,68 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 makeListCall(groupUser);
             }
         }
+    }
+
+    private void makeEndUserAction(final GroupUser user) {
+        // custom dialog
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_user_action);
+        dialog.setTitle("Thông tin nạn nhân");
+
+        // set the custom dialog components - text, image and button
+        TextView name = (TextView) dialog.findViewById(R.id.tvUserActionName);
+        name.setText(user.users.get(0).getUserName());
+
+        TextView tel = (TextView) dialog.findViewById(R.id.tvUserActionTel);
+        tel.setText(String.format("Số điện thoại: %s", user.users.get(0).getPhoneNumber()));
+
+        TextView insurance = (TextView) dialog.findViewById(R.id.tvUserActionInsuranceNo);
+        insurance.setText(String.format("Số thẻ BHYT: %s", user.users.get(0).getHealthInsuranceNo()));
+
+        Button btUserActionClinical = (Button) dialog.findViewById(R.id.btUserActionClinical);
+        // if button is clicked, close the custom dialog
+        btUserActionClinical.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                showClinical(user);
+            }
+        });
+
+        Button btUserActionSoS = (Button) dialog.findViewById(R.id.btUserActionSoS);
+        // if button is clicked, close the custom dialog
+        btUserActionSoS.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                userVictim = user.users.get(0);
+                inSelection = true;
+                setupDisplayCoordinator();
+            }
+        });
+
+        Button btUserActionCall = (Button) dialog.findViewById(R.id.btUserActionCall);
+        // if button is clicked, close the custom dialog
+        btUserActionCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                callPhone(user.users.get(0));
+            }
+        });
+        if (Constants.END_USER == agent) {
+            btUserActionCall.setVisibility(View.INVISIBLE);
+            btUserActionSoS.setVisibility(View.INVISIBLE);
+        } else if (Constants.CENTER_HOSPITAL != agent) {
+            btUserActionSoS.setVisibility(View.INVISIBLE);
+        } else if (Constants.CENTER_HOSPITAL == agent) {
+             if (CommonUtils.isEmpty(user.users.get(0).getObjective()) && userVictim == null) {
+                 btUserActionSoS.setVisibility(View.VISIBLE);
+             } else {
+                 btUserActionSoS.setVisibility(View.INVISIBLE);
+             }
+        }
+        dialog.show();
     }
 
     private void chooseActionCallOrSoS(final User user) {
@@ -379,6 +451,56 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 avatar.setImageResource(R.mipmap.ic_user_avatar);
                 break;
         }
+    }
+
+    private void showClinical(final GroupUser user) {
+        // custom dialog
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_user_clinical);
+        dialog.setTitle(String.format("Hồ sơ bệnh án: %s", user.users.get(0).getUserName()));
+
+        // set the custom dialog components - text, image and button
+        TextView dataView = (TextView) dialog.findViewById(R.id.tvClinical);
+        InputStream is = getResources().openRawResource(R.raw.clinical);
+        Writer writer = new StringWriter();
+        char[] buffer = new char[1024];
+        String result = "";
+        try {
+            Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            int n;
+            while ((n = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, n);
+            }
+            result = writer.toString();
+        }  catch (Exception ex) {
+            Log.d("ESOS", ex.toString());
+        } finally {
+            try {
+                is.close();
+            } catch (Exception ex) {
+                Log.d("ESOS", ex.toString());
+            }
+        }
+        dataView.setText(result);
+
+        Button btUserClinicalCall = (Button) dialog.findViewById(R.id.btUserClinicalCall);
+        // if button is clicked, close the custom dialog
+        btUserClinicalCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                callPhone(user.users.get(0));
+            }
+        });
+        Button btUserClinicalCancel = (Button) dialog.findViewById(R.id.btUserClinicalCancel);
+        // if button is clicked, close the custom dialog
+        btUserClinicalCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
     }
 
     private void updateUserInfo() {
